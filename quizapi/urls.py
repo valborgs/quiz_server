@@ -23,4 +23,5 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('quiz/', include('quiz.urls')),
+    path('recommendation/', include('movie_recommendation.urls'))
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_URL)
