@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 import requests
 import os
+import environ
 
 # Create your views here.
 @api_view(['POST'])
@@ -23,11 +24,19 @@ def recommendMovie(request):
     # Claude API 호출
     api_url = "api_url" 
     headers = { 
-        "x-api-key": "x-api-key", 
+        "x-api-key": env('X_API_KEY'), 
         "content-type": "application/json",
         "anthropic-version": "2023-06-01",
         } 
-    response = requests.post(api_url, json={'prompt': prompt}, headers=headers)
+    response = requests.post(
+        url = api_url, 
+        data = {
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": 1024,
+            "messages": prompt,
+            }, 
+        headers=headers
+        )
 
     if response.status_code == 200: 
         return Response(response.json(), status=status.HTTP_200_OK) 
