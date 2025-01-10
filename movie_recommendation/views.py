@@ -48,7 +48,7 @@ def recommendMovie(request):
     )
 
     if response.status_code == 200: 
-        return Response(response.json(), status=status.HTTP_200_OK) 
+        return Response(json.loads(response.json()["content"][0]["text"]), status=status.HTTP_200_OK) 
     else: 
         return Response(
             {'error': 'Failed to get recommendation from Claude API'}, 
