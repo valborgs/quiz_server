@@ -22,19 +22,19 @@
 
 응답 형식: 
 {
-  "recommendation": 
+  'recommendation': 
     {
-      "title": {
-        "original": "string",
-        "korean": "string"
+      'title': {
+        'original': 'string',
+        'korean': 'string'
       },
-      "year": "number",
-      "genre": ["string"],
-      "duration": "number",
-      "director": "string",
-      "mainCast": ["string"],
-      "recommendationReason": "string",
-      "predictedScore": "number"
+      'year': 'number',
+      'genre': ['string'],
+      'duration': 'number',
+      'director': 'string',
+      'mainCast': ['string'],
+      'recommendationReason': 'string',
+      'predictedScore': 'number'
     },
-  "summary": "string"
+  'summary': 'string'
 }
