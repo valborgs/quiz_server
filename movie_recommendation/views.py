@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 import requests
 import os
-import environ
+import json
 
 # Create your views here.
 @api_view(['POST'])
@@ -11,7 +11,7 @@ def recommendMovie(request):
     viewing_history = request.data.get('viewing_history')
     
     if not viewing_history: 
-        return Response({"error": "viewing_history is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'viewing_history is required'}, status=status.HTTP_400_BAD_REQUEST)
     
     # 프롬프트 파일을 읽어오기
     prompt_path = os.path.join(os.path.dirname(__file__), 'prompts', 'ai_prompt.txt') 
@@ -22,26 +22,35 @@ def recommendMovie(request):
     prompt = prompt_template.format(viewing_history=viewing_history)
 
     # Claude API 호출
-    api_url = "api_url" 
+    api_url = os.environ.get('X_API_URL') 
+
     headers = { 
-        "x-api-key": env('X_API_KEY'), 
-        "content-type": "application/json",
-        "anthropic-version": "2023-06-01",
+        'x-api-key': os.environ.get('X_API_KEY'), 
+        'content-type': 'application/json',
+        'anthropic-version': '2023-06-01',
         } 
+    
+    post_data = {
+            'model': 'claude-3-5-sonnet-20241022',
+            'max_tokens': 1024,
+            'messages': [
+                {
+                    'role': 'user',
+                    'content': prompt
+                }
+            ],
+        }
+    
     response = requests.post(
         url = api_url, 
-        data = {
-            "model": "claude-3-5-sonnet-20241022",
-            "max_tokens": 1024,
-            "messages": prompt,
-            }, 
-        headers=headers
-        )
+        json = post_data,
+        headers = headers
+    )
 
     if response.status_code == 200: 
-        return Response(response.json(), status=status.HTTP_200_OK) 
+        return Response(response, status=status.HTTP_200_OK) 
     else: 
         return Response(
-            {"error": "Failed to get recommendation from Claude API"}, 
+            {'error': 'Failed to get recommendation from Claude API'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
