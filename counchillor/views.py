@@ -62,7 +62,17 @@ def counselling(request):
     )
 
     if response.status_code == 200: 
-        return Response(json.loads(response.json()["content"][0]["text"]), status=status.HTTP_200_OK) 
+        try:
+            response_content = json.loads(response.json()["content"][0]["text"])
+            return Response(response_content, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {
+                    'error': 'api_call_fail',
+                    'reason': e
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )    
     else: 
         return Response(
             {
