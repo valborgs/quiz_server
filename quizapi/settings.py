@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'quiz',
     'movie_recommendation',
     'movie_worldcup',
+    'counchillor',
     'rest_framework',
 ]
 

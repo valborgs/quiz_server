@@ -24,5 +24,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('quiz/', include('quiz.urls')),
     path('recommendation/', include('movie_recommendation.urls')),
-    path('worldcup/', include('movie_worldcup.urls'))
+    path('worldcup/', include('movie_worldcup.urls')),
+    path('counchillor/', include('counchillor.urls'))
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_URL) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
