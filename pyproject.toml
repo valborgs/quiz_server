@@ -1,0 +1,16 @@
+[project]
+name = "quiz-server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.1.0",
+    "django-environ>=0.10.0",
+    "djangorestframework>=3.15.0",
+    "httpx>=0.27.0",
+    "pillow>=12.0.0",
+    "pyjwt>=2.9.0",
+    "pymupdf>=1.26.6",
+    "requests>=2.32.5",
+]

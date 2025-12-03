@@ -27,4 +27,5 @@ urlpatterns = [
     path('worldcup/', include('movie_worldcup.urls')),
     path('counchillor/', include('counchillor.urls')),
     path('api/', include('upbit_gateway.urls')),
+    path('api/pdf/', include('pdfredactor.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_URL) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

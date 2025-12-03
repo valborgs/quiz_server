@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'counchillor',
     'upbit_gateway',
     'rest_framework',
+    'pdfredactor',
 ]
 
 MIDDLEWARE = [
