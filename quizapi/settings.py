@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'upbit_gateway',
     'rest_framework',
     'pdfredactor',
+    'redactor_pro_code_issuance',
 ]
 
 MIDDLEWARE = [
