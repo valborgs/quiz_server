@@ -12,39 +12,42 @@ class KofiWebhookTests(TestCase):
         self.verification_token = 'test_token'
         
     def test_webhook_valid_email(self):
-        """이메일이 포함된 유효한 Ko-fi 웹훅 테스트"""
-        
-        # settings.KOFI_VERIFICATION_TOKEN을 'test_token'으로 가정하고 테스트
-        # override_settings를 사용하는 것이 안전하나, 여기서는 간단히 mock 사용
-        
+        """이메일이 포함된 유효한 Ko-fi 웹훅 테스트 (Slack 알림 포함)"""
         with patch('django.conf.settings.KOFI_VERIFICATION_TOKEN', self.verification_token):
              with patch('redactor_pro_code_issuance.views.send_mail') as mock_send_mail:
-                data = {
-                    'verification_token': self.verification_token,
-                    'message': 'Thanks for the great work! myemail@example.com',
-                }
-                
-                response = self.client.post(self.webhook_url, data, content_type='application/json')
-                
-                self.assertEqual(response.status_code, 200)
-                self.assertTrue(RedeemCode.objects.filter(email='myemail@example.com').exists())
-                mock_send_mail.assert_called_once()
-                
+                 with patch('httpx.post') as mock_httpx_post:
+                    data = {
+                        'verification_token': self.verification_token,
+                        'message': 'Thanks for the great work! myemail@example.com',
+                        'amount': '5.00',
+                        'currency': 'USD'
+                    }
+                    
+                    response = self.client.post(self.webhook_url, data, content_type='application/json')
+                    
+                    self.assertEqual(response.status_code, 200)
+                    self.assertTrue(RedeemCode.objects.filter(email='myemail@example.com').exists())
+                    mock_send_mail.assert_called_once()
+                    mock_httpx_post.assert_called_once() # Slack 알림 호출 확인
+
     def test_webhook_no_email(self):
-        """이메일이 없는 Ko-fi 웹훅 테스트"""
+        """이메일이 없는 Ko-fi 웹훅 테스트 (Slack 알림 포함)"""
         with patch('django.conf.settings.KOFI_VERIFICATION_TOKEN', self.verification_token):
              with patch('redactor_pro_code_issuance.views.send_mail') as mock_send_mail:
-                data = {
-                    'verification_token': self.verification_token,
-                    'message': 'Just a donation without email!',
-                }
-                
-                response = self.client.post(self.webhook_url, data, content_type='application/json')
-                
-                self.assertEqual(response.status_code, 200)
-                # 이메일 없으므로 생성되지 않아야 함 (하지만 구현상 이메일 없으면 그냥 넘어감, 200 OK)
-                self.assertFalse(RedeemCode.objects.filter(email='unknown').exists())
-                mock_send_mail.assert_not_called()
+                 with patch('httpx.post') as mock_httpx_post:
+                    data = {
+                        'verification_token': self.verification_token,
+                        'message': 'Just a donation without email!',
+                        'amount': '3.00',
+                        'currency': 'USD'
+                    }
+                    
+                    response = self.client.post(self.webhook_url, data, content_type='application/json')
+                    
+                    self.assertEqual(response.status_code, 200)
+                    self.assertFalse(RedeemCode.objects.filter(email='unknown').exists())
+                    mock_send_mail.assert_not_called()
+                    mock_httpx_post.assert_called_once() # 이메일 없어도 Slack 알림은 가야 함
 
     def test_webhook_invalid_token(self):
         """유효하지 않은 토큰 테스트"""

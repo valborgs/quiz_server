@@ -147,7 +147,7 @@ UPBIT_ACCESS_KEY = env('UPBIT_ACCESS_KEY', default='')
 UPBIT_SECRET_KEY = env('UPBIT_SECRET_KEY', default='')
 
 # Redeem Code API Key
-REDEEM_API_KEY = env('REDEEM_API_KEY', default='5khHenJo4932K11u')
+REDEEM_API_KEY = env('REDEEM_API_KEY', default='')
 
 # Ko-fi Settings
 KOFI_VERIFICATION_TOKEN = env('KOFI_VERIFICATION_TOKEN', default='')
@@ -159,3 +159,6 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')  # App Password required for Gmail
+
+# Slack Settings
+SLACK_WEBHOOK_URL = env('SLACK_WEBHOOK_URL', default='')

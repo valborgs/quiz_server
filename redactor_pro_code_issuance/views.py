@@ -154,6 +154,7 @@ class RedeemCodeValidationTestView(LoginRequiredMixin, UserPassesTestMixin, Temp
 import json
 import re
 import logging
+import httpx
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.decorators import method_decorator
@@ -167,6 +168,16 @@ class KofiWebhookView(APIView):
     Ko-fi Webhook 처리 뷰
     POST /api/webhook/kofi/
     """
+    def send_slack_notification(self, text):
+        webhook_url = getattr(settings, 'SLACK_WEBHOOK_URL', None)
+        if webhook_url:
+            try:
+                # httpx.post는 동기 호출이므로 응답을 기다림. 비동기 처리가 필요하면 Celery 등을 고려해야 함.
+                # 현재는 간단한 구현을 위해 동기 호출 사용.
+                httpx.post(webhook_url, json={"text": text}, timeout=5.0)
+            except Exception as e:
+                logger.error(f"Failed to send Slack notification: {e}")
+
     def post(self, request):
         try:
             # content_type에 따라 데이터 파싱
@@ -179,30 +190,33 @@ class KofiWebhookView(APIView):
                  data = request.data
 
             # 1. Verification Token 검증
-            verification_token = data.get('verification_token') or data.get('kofi_transaction_id') # kofi 문서 참조 필요, 보통 verification_token 사용
+            verification_token = data.get('verification_token') or data.get('kofi_transaction_id')
             
-            # Ko-fi 문서에 따르면 data JSON 안에 verification_token이 포함됨
             if data.get('verification_token') != settings.KOFI_VERIFICATION_TOKEN:
                  logger.warning(f"Invalid Ko-fi token attempt: {data.get('verification_token')}")
                  return Response({"error": "Invalid token"}, status=status.HTTP_403_FORBIDDEN)
 
-            # 2. 메시지에서 이메일 추출
+            # 2. 데이터 추출
             message_text = data.get('message', '')
+            amount = data.get('amount', 'N/A')
+            currency = data.get('currency', '')
+            # 이메일 추출
             email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', message_text)
             
             if email_match:
                 email = email_match.group(0)
                 logger.info(f"Email detected in Ko-fi message: {email}")
                 
-                # 3. 리딤코드 발급
-                redeem_code = RedeemCode.objects.create(
-                    email=email,
-                    code=RedeemCode.generate_unique_code()
-                )
-                
-                # 4. 이메일 전송
-                subject = "[PDF Redactor Pro] 구매해 주셔서 감사합니다! 리딤코드가 도착했습니다."
-                message = f"""
+                try:
+                    # 3. 리딤코드 발급
+                    redeem_code = RedeemCode.objects.create(
+                        email=email,
+                        code=RedeemCode.generate_unique_code()
+                    )
+                    
+                    # 4. 이메일 전송
+                    subject = "[PDF Redactor Pro] 구매해 주셔서 감사합니다! 리딤코드가 도착했습니다."
+                    email_body = f"""
 안녕하세요, 후원자님!
 
 PDF Redactor Pro를 후원해 주셔서 진심으로 감사드립니다.
@@ -217,24 +231,51 @@ PDF Redactor Pro를 후원해 주셔서 진심으로 감사드립니다.
 
 문제가 있거나 궁금한 점이 있으시면 언제든지 문의해 주세요.
 감사합니다.
-                """
-                try:
+                    """
+                    
                     send_mail(
                         subject,
-                        message,
+                        email_body,
                         settings.EMAIL_HOST_USER,
                         [email],
                         fail_silently=False,
                     )
                     logger.info(f"Redeem code email sent to {email}")
-                except Exception as e:
-                    logger.error(f"Failed to send email to {email}: {str(e)}")
-                    # 이메일 전송 실패하더라도 로직은 성공으로 처리하거나, 별도 재시도 로직 필요 (여기선 로그만 남김)
 
-                # TODO: Slack 알림 전송 기능 추가
-                
+                    # 5. 성공 Slack 알림
+                    slack_message = (
+                        f"🎉 *ko-fi 도네이션이 들어왔습니다!*\n"
+                        f"- 금액: {amount} {currency}\n"
+                        f"- 이메일: {email}\n"
+                        f"- 메시지: {message_text}\n"
+                        f"- 리딤코드: 발급 및 전송 완료 ({redeem_code.code})"
+                    )
+                    self.send_slack_notification(slack_message)
+                    
+                except Exception as e:
+                    logger.error(f"Error processing valid donation: {str(e)}")
+                    # 에러 Slack 알림
+                    error_message = (
+                        f"⚠️ *ko-fi 도네이션 처리 중 에러 발생*\n"
+                        f"- 금액: {amount} {currency}\n"
+                        f"- 이메일: {email}\n"
+                        f"- 에러 내용: {str(e)}"
+                    )
+                    self.send_slack_notification(error_message)
+                    # 이미 200 OK를 Ko-fi에 보내는 것이 나을 수 있음 (재전송 방지)
+                    # 하지만 여기서는 에러 발생 시 처리 실패로 간주하고 500 리턴
+                    return Response({"error": "Internal Processing Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             else:
                 logger.info("No email found in Ko-fi message.")
+                # 이메일이 없는 경우도 알림
+                slack_message = (
+                    f"🔔 *ko-fi 도네이션 (이메일 없음)*\n"
+                    f"- 금액: {amount} {currency}\n"
+                    f"- 메시지: {message_text}\n"
+                    f"- 리딤코드: 발급되지 않음 (이메일 미감지)"
+                )
+                self.send_slack_notification(slack_message)
 
             return Response({"status": "received"}, status=status.HTTP_200_OK)
 
@@ -242,4 +283,5 @@ PDF Redactor Pro를 후원해 주셔서 진심으로 감사드립니다.
              return Response({"error": "Invalid JSON"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.error(f"Ko-fi webhook error: {str(e)}")
+            self.send_slack_notification(f"🚨 *Ko-fi Webhook Critical Error*\n{str(e)}")
             return Response({"error": "Internal Server Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
