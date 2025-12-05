@@ -28,4 +28,5 @@ urlpatterns = [
     path('counchillor/', include('counchillor.urls')),
     path('api/', include('upbit_gateway.urls')),
     path('api/pdf/', include('pdfredactor.urls')),
+    path('api/', include('redactor_pro_code_issuance.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_URL) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

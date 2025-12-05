@@ -70,7 +70,7 @@ ROOT_URLCONF = 'quizapi.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -145,3 +145,6 @@ MEDIA_URL = '/media/'
 # Upbit API settings
 UPBIT_ACCESS_KEY = env('UPBIT_ACCESS_KEY', default='')
 UPBIT_SECRET_KEY = env('UPBIT_SECRET_KEY', default='')
+
+# Redeem Code API Key
+REDEEM_API_KEY = env('REDEEM_API_KEY', default='5khHenJo4932K11u')

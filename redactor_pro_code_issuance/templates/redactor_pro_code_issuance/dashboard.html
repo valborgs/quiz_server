@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>리딤코드 발급 대시보드</title>
+    <style>
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        input[type="email"] {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 0.75rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .error {
+            color: #dc3545;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .code-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            color: #28a745;
+            margin: 0.5rem 0;
+            letter-spacing: 2px;
+        }
+
+        .message {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .logout-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .logout-btn {
+            background-color: #6c757d;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="logout-container">
+        <form action="{% url 'admin:logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">로그아웃</button>
+        </form>
+    </div>
+    <div class="container">
+        <h1>리딤코드 발급</h1>
+        <form method="post">
+            {% csrf_token %}
+            <input type="email" name="email" placeholder="이메일 주소를 입력하세요" required>
+            <button type="submit">발급하기</button>
+        </form>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if redeem_code %}
+        <div class="result">
+            <div class="message">{{ message }}</div>
+            <div class="code-display">{{ redeem_code.code }}</div>
+            <div class="message">{{ redeem_code.email }}</div>
+        </div>
+        {% endif %}
+
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="{% url 'redeem-validation-test' %}"
+                style="color: #007bff; text-decoration: none; font-size: 0.9rem;">검증 테스트 페이지로 이동 →</a>
+        </div>
+    </div>
+</body>
+
+</html>

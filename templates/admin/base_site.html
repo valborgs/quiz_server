@@ -1,0 +1,6 @@
+{% extends "admin/base.html" %}
+
+{% block userlinks %}
+<a href="{% url 'redeem-dashboard' %}">리딤코드 대시보드</a> /
+{{ block.super }}
+{% endblock %}
