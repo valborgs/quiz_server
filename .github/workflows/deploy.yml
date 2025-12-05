@@ -22,3 +22,17 @@ jobs:
             uv run python manage.py migrate
             uv run python manage.py collectstatic --noinput
             sudo systemctl restart quizapi
+
+      - name: Notify Slack on Success
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"✅ 배포 성공: ${{ github.repository }} (Branch: ${{ github.ref_name }})\nCommit: ${{ github.event.head_commit.message }}"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"❌ 배포 실패: ${{ github.repository }} (Branch: ${{ github.ref_name }})\nCommit: ${{ github.event.head_commit.message }}"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}

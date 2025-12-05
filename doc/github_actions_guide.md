@@ -14,6 +14,7 @@ GitHub 저장소의 **Settings > Secrets and variables > Actions** 메뉴에서 
 | `USERNAME` | `ubuntu` | SSH 접속 사용자명 |
 | `SSH_PRIVATE_KEY` | `-----BEGIN OPENSSH PRIVATE KEY-----...` | SSH 접속용 개인키 (PEM 형식) |
 | `PORT` | `22` | SSH 포트 (기본값 22) |
+| `SLACK_WEBHOOK_URL` | `https://hooks.slack.com/...` | 슬랙 알림용 웹훅 URL |
 
 ## 3. 서버 설정 (중요)
 GitHub Actions가 `sudo systemctl restart` 명령어를 실행하려면, 비밀번호 입력 없이 `sudo`를 사용할 수 있도록 설정해야 합니다.
