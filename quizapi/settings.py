@@ -148,3 +148,14 @@ UPBIT_SECRET_KEY = env('UPBIT_SECRET_KEY', default='')
 
 # Redeem Code API Key
 REDEEM_API_KEY = env('REDEEM_API_KEY', default='5khHenJo4932K11u')
+
+# Ko-fi Settings
+KOFI_VERIFICATION_TOKEN = env('KOFI_VERIFICATION_TOKEN', default='')
+
+# Email Settings (Gmail)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')  # App Password required for Gmail

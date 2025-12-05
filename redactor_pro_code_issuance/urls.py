@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import RedeemCodeIssueAPIView, RedeemCodeDashboardView, RedeemCodeValidationAPIView, RedeemCodeValidationTestView
+from .views import RedeemCodeIssueAPIView, RedeemCodeDashboardView, RedeemCodeValidationAPIView, RedeemCodeValidationTestView, KofiWebhookView
 
 urlpatterns = [
     # API Endpoint
+    path('webhook/kofi/', KofiWebhookView.as_view(), name='kofi-webhook'),
     path('redeem/issue/', RedeemCodeIssueAPIView.as_view(), name='redeem-issue-api'),
     path('redeem/validate/', RedeemCodeValidationAPIView.as_view(), name='redeem-validate-api'),
     
