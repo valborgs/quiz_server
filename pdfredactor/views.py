@@ -88,18 +88,36 @@ class RedactPdfView(APIView):
             pass
 
             # Re-implementation of the loop
+            # Helper to convert Android int color to PyMuPDF RGB tuple
+            def _int_to_rgb(color_int):
+                # Ensure 32-bit unsigned
+                color = color_int & 0xFFFFFFFF
+                # Extract components (AARRGGBB)
+                # alpha = (color >> 24) & 0xFF  # Unused for now
+                red = (color >> 16) & 0xFF
+                green = (color >> 8) & 0xFF
+                blue = color & 0xFF
+                # Return normalized tuple (0..1)
+                return (red / 255.0, green / 255.0, blue / 255.0)
+
             for item in redactions:
                 page_index = item.get('pageIndex')
                 x = item.get('x')
                 y = item.get('y')
                 width = item.get('width')
                 height = item.get('height')
+                # Default to black (-16777216) if not provided
+                color_int = item.get('color', -16777216)
 
                 if page_index is not None and x is not None and y is not None and width is not None and height is not None:
                      if 0 <= page_index < len(doc):
                         page = doc[page_index]
                         rect = fitz.Rect(x, y, x + width, y + height)
-                        page.add_redact_annot(rect, fill=(0, 0, 0))
+                        
+                        rgb_color = _int_to_rgb(color_int)
+                        
+                        # Add redaction annotation with the specific color
+                        page.add_redact_annot(rect, fill=rgb_color)
 
             # Apply redactions on pages that have them
             # We can just iterate all pages or keep track. 
