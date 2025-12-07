@@ -12,6 +12,14 @@ class RedeemCodeIssueAPIView(APIView):
     POST /api/redeem/issue/
     """
     def post(self, request):
+        # 헤더 검증
+        from django.conf import settings
+        api_key = request.headers.get('X-Redeem-Api-Key')
+        if not api_key or api_key != settings.REDEEM_API_KEY:
+             return Response({
+                "message": "권한이 없습니다."
+            }, status=status.HTTP_403_FORBIDDEN)
+
         serializer = RedeemCodeSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
