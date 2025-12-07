@@ -13,3 +13,7 @@ class RedeemCodeValidationSerializer(serializers.Serializer):
     """
     email = serializers.EmailField(required=True)
     code = serializers.CharField(required=True, min_length=8, max_length=8)
+    uuid = serializers.CharField(required=True)
+
+    def validate_uuid(self, value):
+        return value.replace('-', '')

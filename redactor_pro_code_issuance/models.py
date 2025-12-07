@@ -9,6 +9,7 @@ class RedeemCode(models.Model):
     email = models.EmailField(help_text="사용자 이메일")
     code = models.CharField(max_length=8, unique=True, help_text="8자리 영문 대문자+숫자 리딤코드")
     is_used = models.BooleanField(default=False, help_text="사용 여부")
+    uuid = models.CharField(max_length=100, null=True, blank=True, help_text="사용자 기기 UUID")
     created_at = models.DateTimeField(auto_now_add=True, help_text="생성일")
     updated_at = models.DateTimeField(auto_now=True, help_text="수정일")
 

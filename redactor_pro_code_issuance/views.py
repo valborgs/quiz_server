@@ -57,18 +57,25 @@ class RedeemCodeValidationAPIView(APIView):
         if serializer.is_valid():
             email = serializer.validated_data['email']
             code = serializer.validated_data['code']
+            uuid = serializer.validated_data['uuid']
             
             try:
                 redeem_code = RedeemCode.objects.get(email=email, code=code)
-                
-                if redeem_code.is_used:
-                    return Response({
-                        "message": "이미 사용된 리딤코드입니다.",
-                        "is_valid": False
-                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # 사용되지 않은 코드라면: 현재 기기에 바인딩하고 사용 처리
+                if not redeem_code.is_used:
+                    redeem_code.uuid = uuid
+                    redeem_code.is_used = True
+                    redeem_code.save()
+                elif redeem_code.uuid != uuid:
+                    # 기기 변경 (License Transfer)
+                    redeem_code.uuid = uuid
+                    redeem_code.save()
                     
-                redeem_code.is_used = True
-                redeem_code.save()
+                    return Response({
+                        "message": "새로운 기기에서 리딤코드를 등록합니다. 기존 기기에 설치된 앱은 pro 기능이 비활성화 됩니다.",
+                        "is_valid": True
+                    }, status=status.HTTP_200_OK)
                 
                 return Response({
                     "message": "리딤코드가 성공적으로 검증되었습니다.",
