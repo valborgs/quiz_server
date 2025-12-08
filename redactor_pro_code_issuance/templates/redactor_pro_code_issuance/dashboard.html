@@ -22,7 +22,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 800px;
         }
 
         h1 {
@@ -103,6 +103,52 @@
         .logout-btn:hover {
             background-color: #5a6268;
         }
+
+        .status-section {
+            margin-top: 2rem;
+            width: 100%;
+        }
+
+        .status-toggle-btn {
+            background-color: #17a2b8;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .status-toggle-btn:hover {
+            background-color: #138496;
+        }
+
+        #status-container {
+            display: none;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .used-true {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .used-false {
+            color: #dc3545;
+        }
     </style>
 </head>
 
@@ -133,11 +179,59 @@
         </div>
         {% endif %}
 
+        <div class="status-section">
+            <button type="button" class="status-toggle-btn" onclick="toggleStatus()">발급현황 ▼</button>
+            <div id="status-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>이메일</th>
+                            <th>코드</th>
+                            <th>사용여부</th>
+                            <th>발급일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for code in redeem_codes %}
+                        <tr>
+                            <td>{{ code.email }}</td>
+                            <td>{{ code.code }}</td>
+                            <td>
+                                <span class="{% if code.is_used %}used-true{% else %}used-false{% endif %}">
+                                    {% if code.is_used %}사용됨{% else %}미사용{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ code.created_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center;">발급된 코드가 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div style="text-align: center; margin-top: 1.5rem;">
             <a href="{% url 'redeem-validation-test' %}"
                 style="color: #007bff; text-decoration: none; font-size: 0.9rem;">검증 테스트 페이지로 이동 →</a>
         </div>
     </div>
+
+    <script>
+        function toggleStatus() {
+            const container = document.getElementById('status-container');
+            const btn = document.querySelector('.status-toggle-btn');
+            if (container.style.display === 'none' || container.style.display === '') {
+                container.style.display = 'block';
+                btn.textContent = '발급현황 ▲';
+            } else {
+                container.style.display = 'none';
+                btn.textContent = '발급현황 ▼';
+            }
+        }
+    </script>
 </body>
 
 </html>

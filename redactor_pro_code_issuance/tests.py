@@ -189,3 +189,39 @@ class RedeemCodeTests(TestCase):
         self.assertTemplateUsed(response, 'redactor_pro_code_issuance/dashboard.html')
         self.assertContains(response, 'dashboard@example.com')
         self.assertTrue(RedeemCode.objects.filter(email='dashboard@example.com').exists())
+
+    def test_dashboard_context_has_codes(self):
+        """대시보드 GET 요청 시 컨텍스트에 리딤코드 목록이 포함되는지 테스트"""
+        from django.contrib.auth.models import User
+        if not User.objects.filter(username='admin_ctx').exists():
+            admin = User.objects.create_superuser(username='admin_ctx', password='password', email='admin_ctx@example.com')
+        self.client.login(username='admin_ctx', password='password')
+
+        # 리딤코드 생성
+        RedeemCode.objects.create(email='ctx1@example.com', code='CTXCODE1')
+        RedeemCode.objects.create(email='ctx2@example.com', code='CTXCODE2')
+
+        response = self.client.get(self.dashboard_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('redeem_codes', response.context)
+        self.assertEqual(len(response.context['redeem_codes']), 2)
+
+    def test_dashboard_post_updates_context(self):
+        """대시보드 POST 요청(발급) 후 컨텍스트에 업데이트된 리딤코드 목록이 포함되는지 테스트"""
+        from django.contrib.auth.models import User
+        if not User.objects.filter(username='admin_mod').exists():
+            admin = User.objects.create_superuser(username='admin_mod', password='password', email='admin_mod@example.com')
+        self.client.login(username='admin_mod', password='password')
+
+        # 기존 코드 없음
+        RedeemCode.objects.all().delete()
+
+        # 코드 발급 요청
+        data = {'email': 'post@example.com'}
+        response = self.client.post(self.dashboard_url, data)
+        self.assertEqual(response.status_code, 200)
+        
+        # 컨텍스트 확인
+        self.assertIn('redeem_codes', response.context)
+        self.assertEqual(len(response.context['redeem_codes']), 1)
+        self.assertEqual(response.context['redeem_codes'][0].email, 'post@example.com')

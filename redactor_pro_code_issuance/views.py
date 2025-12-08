@@ -103,9 +103,15 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
     def test_func(self):
         return self.request.user.is_staff or self.request.user.is_superuser
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['redeem_codes'] = RedeemCode.objects.all().order_by('-created_at')
+        return context
+
     def post(self, request):
         email = request.POST.get('email')
-        context = {}
+        # 기본 컨텍스트 (리딤코드 목록 포함)
+        context = self.get_context_data()
         
         if not email:
             context['error'] = "이메일을 입력해주세요."
@@ -124,6 +130,8 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         context['redeem_code'] = redeem_code
         context['is_new'] = True
         context['message'] = "새 리딤코드가 발급되었습니다."
+        # 새 코드가 추가되었으므로 목록을 다시 쿼리 (또는 위에서 create 후 쿼리해도 됨, 여기서는 확실하게 다시 쿼리)
+        context['redeem_codes'] = RedeemCode.objects.all().order_by('-created_at')
             
         return render(request, self.template_name, context)
 
