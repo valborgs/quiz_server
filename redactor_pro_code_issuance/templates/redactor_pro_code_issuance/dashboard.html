@@ -135,20 +135,145 @@
             text-align: left;
             padding: 8px;
             border-bottom: 1px solid #ddd;
-        }
 
-        th {
-            background-color: #f2f2f2;
-        }
+            < !DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>리딤코드 발급 대시보드</title><style>body {
+                font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+                background-color: #f5f5f5;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+            }
 
-        .used-true {
-            color: #28a745;
-            font-weight: bold;
-        }
+            .container {
+                background-color: white;
+                padding: 2rem;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                width: 100%;
+                max-width: 800px;
+            }
 
-        .used-false {
-            color: #dc3545;
-        }
+            h1 {
+                text-align: center;
+                color: #333;
+                margin-bottom: 1.5rem;
+            }
+
+            form {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            input[type="email"] {
+                padding: 0.75rem;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-size: 1rem;
+            }
+
+            button {
+                padding: 0.75rem;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+            .result {
+                margin-top: 1.5rem;
+                padding: 1rem;
+                background-color: #f8f9fa;
+                border-radius: 6px;
+                border: 1px solid #e9ecef;
+            }
+
+            .error {
+                color: #dc3545;
+                margin-top: 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            .code-display {
+                font-size: 1.5rem;
+                font-weight: bold;
+                text-align: center;
+                color: #28a745;
+                margin: 0.5rem 0;
+                letter-spacing: 2px;
+            }
+
+            .message {
+                text-align: center;
+                color: #6c757d;
+                font-size: 0.9rem;
+            }
+
+            .logout-container {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+            }
+
+            .logout-btn {
+                background-color: #6c757d;
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .logout-btn:hover {
+                background-color: #5a6268;
+            }
+
+            .status-section {
+                margin-top: 2rem;
+                width: 100%;
+            }
+
+            .status-toggle-btn {
+                background-color: #17a2b8;
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+
+            .status-toggle-btn:hover {
+                background-color: #138496;
+            }
+
+            #status-container {
+                display: none;
+                overflow-x: auto;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.9rem;
+            }
+
+            th,
+            td {
+                text-align: left;
+                padding: 8px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            th {
+                background-color: #f2f2f2;
+            }
+
+            .used-true {
+                color: #28a745;
+            }
     </style>
 </head>
 
@@ -161,23 +286,23 @@
     </div>
     <div class="container">
         <h1>리딤코드 발급</h1>
-        <form method="post">
+        <form id="issueForm" onsubmit="handleIssue(event)">
             {% csrf_token %}
-            <input type="email" name="email" placeholder="이메일 주소를 입력하세요" required>
-            <button type="submit">발급하기</button>
+            <input type="email" id="emailInput" name="email" placeholder="이메일 주소를 입력하세요" required>
+            <button type="submit" id="issueBtn">발급하기</button>
         </form>
 
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
-
-        {% if redeem_code %}
-        <div class="result">
-            <div class="message">{{ message }}</div>
-            <div class="code-display">{{ redeem_code.code }}</div>
-            <div class="message">{{ redeem_code.email }}</div>
+        <div class="loading-bar" id="loadingBar">
+            <div class="loading-progress"></div>
         </div>
-        {% endif %}
+
+        <div id="errorContainer" class="error" style="display: none;"></div>
+
+        <div id="resultContainer" class="result" style="display: none;">
+            <div class="message" id="resultMessage"></div>
+            <div class="code-display" id="resultCode"></div>
+            <div class="message" id="resultEmail"></div>
+        </div>
 
         <div class="status-section">
             <button type="button" class="status-toggle-btn" onclick="toggleStatus()">발급현황 ▼</button>
@@ -229,6 +354,98 @@
             } else {
                 container.style.display = 'none';
                 btn.textContent = '발급현황 ▼';
+            }
+        }
+
+        async function handleIssue(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('issueForm');
+            const btn = document.getElementById('issueBtn');
+            const loadingBar = document.getElementById('loadingBar');
+            const errorContainer = document.getElementById('errorContainer');
+            const resultContainer = document.getElementById('resultContainer');
+            const emailInput = document.getElementById('emailInput');
+
+            // UI 초기화
+            errorContainer.style.display = 'none';
+            resultContainer.style.display = 'none';
+            btn.disabled = true;
+            btn.classList.add('btn-disabled');
+            loadingBar.style.display = 'block';
+
+            const formData = new FormData(form);
+
+            try {
+                // 인위적인 딜레이 (UI 확인용)
+                await new Promise(r => setTimeout(r, 600));
+
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // 성공 처리
+                    document.getElementById('resultMessage').textContent = data.message;
+                    document.getElementById('resultCode').textContent = data.code;
+                    document.getElementById('resultEmail').textContent = data.email;
+                    resultContainer.style.display = 'block';
+
+                    // 테이블에 추가
+                    addCodeToTable(data);
+
+                    // 폼 초기화
+                    emailInput.value = '';
+                } else {
+                    // 실패 처리
+                    errorContainer.textContent = data.error || '알 수 없는 에러가 발생했습니다.';
+                    errorContainer.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                errorContainer.textContent = '서버 통신 중 에러가 발생했습니다.';
+                errorContainer.style.display = 'block';
+            } finally {
+                // UI 복구
+                btn.disabled = false;
+                btn.classList.remove('btn-disabled');
+                loadingBar.style.display = 'none';
+            }
+        }
+
+        function addCodeToTable(data) {
+            const tbody = document.querySelector('table tbody');
+            const noDataRow = tbody.querySelector('td[colspan="4"]');
+
+            if (noDataRow) {
+                noDataRow.parentElement.remove();
+            }
+
+            const row = document.createElement('tr');
+
+            // 사용 상태 (새로 발급된 코드는 미사용)
+            const statusHtml = '<span class="used-false">미사용</span>';
+
+            row.innerHTML = `
+                <td>${data.email}</td>
+                <td>${data.code}</td>
+                <td>${statusHtml}</td>
+                <td>${data.created_at}</td>
+            `;
+
+            // 맨 위에 추가
+            if (tbody.firstChild) {
+                tbody.insertBefore(row, tbody.firstChild);
+            } else {
+                tbody.appendChild(row);
             }
         }
     </script>

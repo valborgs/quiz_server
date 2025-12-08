@@ -225,3 +225,29 @@ class RedeemCodeTests(TestCase):
         self.assertIn('redeem_codes', response.context)
         self.assertEqual(len(response.context['redeem_codes']), 1)
         self.assertEqual(response.context['redeem_codes'][0].email, 'post@example.com')
+
+    def test_dashboard_ajax_post(self):
+        """AJAX POST 요청 시 JSON 응답을 반환해야 함"""
+        from django.urls import reverse
+        from django.contrib.auth.models import User
+        if not User.objects.filter(username='admin_ajax').exists():
+            admin = User.objects.create_superuser(username='admin_ajax', password='password', email='admin_ajax@example.com')
+        self.client.login(username='admin_ajax', password='password')
+
+        url = reverse('redeem-dashboard')
+        data = {'email': 'ajax@example.com'}
+        
+        # AJAX 요청 시뮬레이션 (HTTP_X_REQUESTED_WITH 헤더 추가)
+        response = self.client.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        
+        response_json = response.json()
+        self.assertTrue(response_json['success'])
+        self.assertEqual(response_json['email'], 'ajax@example.com')
+        self.assertIn('code', response_json)
+        self.assertIn('created_at', response_json)
+        
+        # DB에 저장되었는지 확인
+        self.assertTrue(RedeemCode.objects.filter(email='ajax@example.com').exists())

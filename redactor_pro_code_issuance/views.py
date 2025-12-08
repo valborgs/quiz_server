@@ -109,16 +109,24 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         return context
 
     def post(self, request):
+        from django.http import JsonResponse
         email = request.POST.get('email')
-        # 기본 컨텍스트 (리딤코드 목록 포함)
-        context = self.get_context_data()
         
+        # AJAX 요청 확인
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.accepts('application/json')
+
         if not email:
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': "이메일을 입력해주세요."}, status=400)
+            context = self.get_context_data()
             context['error'] = "이메일을 입력해주세요."
             return render(request, self.template_name, context)
             
         # 간단한 이메일 형식 체크 (필요시 더 정교하게)
         if '@' not in email:
+             if is_ajax:
+                 return JsonResponse({'success': False, 'error': "유효한 이메일 형식이 아닙니다."}, status=400)
+             context = self.get_context_data()
              context['error'] = "유효한 이메일 형식이 아닙니다."
              return render(request, self.template_name, context)
 
@@ -127,10 +135,20 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             code=RedeemCode.generate_unique_code()
         )
         
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'email': redeem_code.email,
+                'code': redeem_code.code,
+                'created_at': redeem_code.created_at.strftime('%Y-%m-%d %H:%M'),
+                'message': "새 리딤코드가 발급되었습니다."
+            })
+
+        # 일반 요청 처리 (기존 로직)
+        context = self.get_context_data()
         context['redeem_code'] = redeem_code
         context['is_new'] = True
         context['message'] = "새 리딤코드가 발급되었습니다."
-        # 새 코드가 추가되었으므로 목록을 다시 쿼리 (또는 위에서 create 후 쿼리해도 됨, 여기서는 확실하게 다시 쿼리)
         context['redeem_codes'] = RedeemCode.objects.all().order_by('-created_at')
             
         return render(request, self.template_name, context)
