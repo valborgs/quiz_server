@@ -274,6 +274,17 @@
             .used-true {
                 color: #28a745;
             }
+
+            .delete-btn {
+                background-color: #dc3545;
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+                border-radius: 4px;
+            }
+
+            .delete-btn:hover {
+                background-color: #c82333;
+            }
     </style>
 </head>
 
@@ -314,11 +325,12 @@
                             <th>코드</th>
                             <th>사용여부</th>
                             <th>발급일</th>
+                            <th>관리</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for code in redeem_codes %}
-                        <tr>
+                        <tr data-code="{{ code.code }}">
                             <td>{{ code.email }}</td>
                             <td>{{ code.code }}</td>
                             <td>
@@ -327,10 +339,14 @@
                                 </span>
                             </td>
                             <td>{{ code.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <button type="button" class="delete-btn"
+                                    onclick="handleDelete('{{ code.code }}')">삭제</button>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" style="text-align: center;">발급된 코드가 없습니다.</td>
+                            <td colspan="5" style="text-align: center;">발급된 코드가 없습니다.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -434,11 +450,13 @@
             // 사용 상태 (새로 발급된 코드는 미사용)
             const statusHtml = '<span class="used-false">미사용</span>';
 
+            row.setAttribute('data-code', data.code);
             row.innerHTML = `
                 <td>${data.email}</td>
                 <td>${data.code}</td>
                 <td>${statusHtml}</td>
                 <td>${data.created_at}</td>
+                <td><button type="button" class="delete-btn" onclick="handleDelete('${data.code}')">삭제</button></td>
             `;
 
             // 맨 위에 추가
@@ -446,6 +464,47 @@
                 tbody.insertBefore(row, tbody.firstChild);
             } else {
                 tbody.appendChild(row);
+            }
+        }
+
+        async function handleDelete(code) {
+            if (!confirm(`리딤코드(${code})를 삭제하시겠습니까?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/pdf-redeem/redeem/delete/${code}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // 테이블에서 해당 행 삭제
+                    const row = document.querySelector(`tr[data-code="${code}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+
+                    // 테이블이 비었으면 안내 메시지 표시
+                    const tbody = document.querySelector('table tbody');
+                    if (!tbody.querySelector('tr')) {
+                        const emptyRow = document.createElement('tr');
+                        emptyRow.innerHTML = '<td colspan="5" style="text-align: center;">발급된 코드가 없습니다.</td>';
+                        tbody.appendChild(emptyRow);
+                    }
+
+                    alert('리딤코드가 삭제되었습니다.');
+                } else {
+                    alert(data.error || '삭제 중 에러가 발생했습니다.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('서버 통신 중 에러가 발생했습니다.');
             }
         }
     </script>

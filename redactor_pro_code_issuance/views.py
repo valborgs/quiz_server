@@ -153,6 +153,26 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
             
         return render(request, self.template_name, context)
 
+class RedeemCodeDeleteView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    """
+    리딤코드 삭제 API
+    관리자 권한(is_staff or is_superuser)이 있는 사용자만 접근 가능
+    """
+    login_url = '/admin/login/'
+
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.is_superuser
+
+    def delete(self, request, code):
+        from django.http import JsonResponse
+        try:
+            redeem_code = RedeemCode.objects.get(code=code)
+            redeem_code.delete()
+            return JsonResponse({'success': True, 'message': '리딤코드가 삭제되었습니다.'})
+        except RedeemCode.DoesNotExist:
+            return JsonResponse({'success': False, 'error': '해당 리딤코드를 찾을 수 없습니다.'}, status=404)
+
+
 class RedeemCodeValidationTestView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     """
     리딤코드 검증 테스트 페이지 뷰
