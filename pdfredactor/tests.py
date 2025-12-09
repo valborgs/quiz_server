@@ -1,9 +1,10 @@
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, RequestFactory, override_settings
 from unittest.mock import patch, MagicMock
 from .views import RedactPdfView
 import json
 from io import BytesIO
 
+@override_settings(REDACT_API_KEY='test_secret_key')
 class RedactPdfViewTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -43,7 +44,13 @@ class RedactPdfViewTests(TestCase):
             'redactions': json.dumps(redactions)
         }
         
-        request = self.factory.post('/redact/', data, format='multipart')
+        # Include API Key in header
+        request = self.factory.post(
+            '/redact/', 
+            data, 
+            format='multipart',
+            HTTP_X_REDACT_API_KEY='test_secret_key'
+        )
         response = self.view(request)
         
         # Verify response
@@ -57,3 +64,33 @@ class RedactPdfViewTests(TestCase):
         args, kwargs = mock_page.add_redact_annot.call_args
         self.assertEqual(kwargs['fill'], expected_fill)
 
+    def test_post_missing_api_key(self):
+        file_content = b"dummy pdf content"
+        file = BytesIO(file_content)
+        file.name = "test.pdf"
+        data = {'file': file, 'redactions': '[]'}
+        
+        # No API Key
+        request = self.factory.post('/redact/', data, format='multipart')
+        response = self.view(request)
+        
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['error'], "권한이 없습니다.")
+
+    def test_post_invalid_api_key(self):
+        file_content = b"dummy pdf content"
+        file = BytesIO(file_content)
+        file.name = "test.pdf"
+        data = {'file': file, 'redactions': '[]'}
+        
+        # Invalid API Key
+        request = self.factory.post(
+            '/redact/', 
+            data, 
+            format='multipart', 
+            HTTP_X_REDACT_API_KEY='wrong_key'
+        )
+        response = self.view(request)
+        
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['error'], "권한이 없습니다.")

@@ -148,6 +148,7 @@ UPBIT_SECRET_KEY = env('UPBIT_SECRET_KEY', default='')
 
 # Redeem Code API Key
 REDEEM_API_KEY = env('REDEEM_API_KEY', default='')
+REDACT_API_KEY = env('REDACT_API_KEY', default='')
 
 # Ko-fi Settings
 KOFI_VERIFICATION_TOKEN = env('KOFI_VERIFICATION_TOKEN', default='')

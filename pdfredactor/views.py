@@ -11,6 +11,14 @@ class RedactPdfView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request, *args, **kwargs):
+        # 헤더 검증
+        from django.conf import settings
+        api_key = request.headers.get('X-Redact-Api-Key')
+        if not api_key or api_key != settings.REDACT_API_KEY:
+             return Response({
+                "error": "권한이 없습니다."
+            }, status=status.HTTP_403_FORBIDDEN)
+
         file_obj = request.FILES.get('file')
         redactions_json = request.data.get('redactions')
 
