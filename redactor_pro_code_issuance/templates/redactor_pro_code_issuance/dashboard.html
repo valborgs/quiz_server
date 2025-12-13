@@ -331,6 +331,7 @@
                         <tr>
                             <th>이메일</th>
                             <th>코드</th>
+                            <th>UUID</th>
                             <th>사용여부</th>
                             <th>발급일</th>
                             <th>수정일</th>
@@ -342,6 +343,7 @@
                         <tr data-code="{{ code.code }}">
                             <td>{{ code.email }}</td>
                             <td>{{ code.code }}</td>
+                            <td>{{ code.uuid|default:"-" }}</td>
                             <td>
                                 {% if code.status == 'unused' %}
                                 <span class="status-unused">미사용</span>
@@ -360,7 +362,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" style="text-align: center;">발급된 코드가 없습니다.</td>
+                            <td colspan="7" style="text-align: center;">발급된 코드가 없습니다.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -468,6 +470,7 @@
             row.innerHTML = `
                 <td>${data.email}</td>
                 <td>${data.code}</td>
+                <td>-</td>
                 <td>${statusHtml}</td>
                 <td>${data.created_at}</td>
                 <td>${data.updated_at}</td>

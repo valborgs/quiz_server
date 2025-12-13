@@ -128,7 +128,7 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['redeem_codes'] = RedeemCode.objects.exclude(status=RedeemCodeStatus.DELETED).order_by('-created_at')
+        context['redeem_codes'] = RedeemCode.objects.all().order_by('-created_at')
         return context
 
     def post(self, request):
@@ -172,7 +172,7 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         context['redeem_code'] = redeem_code
         context['is_new'] = True
         context['message'] = "새 리딤코드가 발급되었습니다."
-        context['redeem_codes'] = RedeemCode.objects.exclude(status=RedeemCodeStatus.DELETED).order_by('-created_at')
+        context['redeem_codes'] = RedeemCode.objects.all().order_by('-created_at')
             
         return render(request, self.template_name, context)
 
