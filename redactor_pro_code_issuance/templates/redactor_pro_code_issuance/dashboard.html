@@ -271,8 +271,16 @@
                 background-color: #f2f2f2;
             }
 
-            .used-true {
+            .status-unused {
+                color: #6c757d;
+            }
+
+            .status-used {
                 color: #28a745;
+            }
+
+            .status-deleted {
+                color: #dc3545;
             }
 
             .delete-btn {
@@ -325,6 +333,7 @@
                             <th>코드</th>
                             <th>사용여부</th>
                             <th>발급일</th>
+                            <th>수정일</th>
                             <th>관리</th>
                         </tr>
                     </thead>
@@ -334,11 +343,16 @@
                             <td>{{ code.email }}</td>
                             <td>{{ code.code }}</td>
                             <td>
-                                <span class="{% if code.is_used %}used-true{% else %}used-false{% endif %}">
-                                    {% if code.is_used %}사용됨{% else %}미사용{% endif %}
-                                </span>
+                                {% if code.status == 'unused' %}
+                                <span class="status-unused">미사용</span>
+                                {% elif code.status == 'used' %}
+                                <span class="status-used">사용됨</span>
+                                {% else %}
+                                <span class="status-deleted">삭제됨</span>
+                                {% endif %}
                             </td>
                             <td>{{ code.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ code.updated_at|date:"Y-m-d H:i" }}</td>
                             <td>
                                 <button type="button" class="delete-btn"
                                     onclick="handleDelete('{{ code.code }}')">삭제</button>
@@ -346,7 +360,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" style="text-align: center;">발급된 코드가 없습니다.</td>
+                            <td colspan="6" style="text-align: center;">발급된 코드가 없습니다.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -448,7 +462,7 @@
             const row = document.createElement('tr');
 
             // 사용 상태 (새로 발급된 코드는 미사용)
-            const statusHtml = '<span class="used-false">미사용</span>';
+            const statusHtml = '<span class="status-unused">미사용</span>';
 
             row.setAttribute('data-code', data.code);
             row.innerHTML = `
@@ -456,6 +470,7 @@
                 <td>${data.code}</td>
                 <td>${statusHtml}</td>
                 <td>${data.created_at}</td>
+                <td>${data.updated_at}</td>
                 <td><button type="button" class="delete-btn" onclick="handleDelete('${data.code}')">삭제</button></td>
             `;
 

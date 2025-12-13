@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import render
 from django.views.generic import TemplateView
-from .models import RedeemCode
+from .models import RedeemCode, RedeemCodeStatus
 from .serializers import RedeemCodeSerializer, RedeemCodeValidationSerializer
 
 class RedeemCodeIssueAPIView(APIView):
@@ -65,10 +65,17 @@ class RedeemCodeValidationAPIView(APIView):
                 # JWT 토큰 생성을 위한 import
                 from .jwt_utils import create_jwt_token
 
+                # 삭제된 코드는 사용 불가
+                if redeem_code.status == RedeemCodeStatus.DELETED:
+                    return Response({
+                        "message": "삭제된 리딤코드입니다.",
+                        "is_valid": False
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
                 # 사용되지 않은 코드라면: 현재 기기에 바인딩하고 사용 처리
-                if not redeem_code.is_used:
+                if redeem_code.status == RedeemCodeStatus.UNUSED:
                     redeem_code.uuid = uuid
-                    redeem_code.is_used = True
+                    redeem_code.status = RedeemCodeStatus.USED
                     redeem_code.save()
                     
                     jwt_token = create_jwt_token(code=code, device_id=uuid)
@@ -121,7 +128,7 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['redeem_codes'] = RedeemCode.objects.all().order_by('-created_at')
+        context['redeem_codes'] = RedeemCode.objects.exclude(status=RedeemCodeStatus.DELETED).order_by('-created_at')
         return context
 
     def post(self, request):
@@ -165,7 +172,7 @@ class RedeemCodeDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateV
         context['redeem_code'] = redeem_code
         context['is_new'] = True
         context['message'] = "새 리딤코드가 발급되었습니다."
-        context['redeem_codes'] = RedeemCode.objects.all().order_by('-created_at')
+        context['redeem_codes'] = RedeemCode.objects.exclude(status=RedeemCodeStatus.DELETED).order_by('-created_at')
             
         return render(request, self.template_name, context)
 
@@ -183,7 +190,8 @@ class RedeemCodeDeleteView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
         from django.http import JsonResponse
         try:
             redeem_code = RedeemCode.objects.get(code=code)
-            redeem_code.delete()
+            redeem_code.status = RedeemCodeStatus.DELETED
+            redeem_code.save()
             return JsonResponse({'success': True, 'message': '리딤코드가 삭제되었습니다.'})
         except RedeemCode.DoesNotExist:
             return JsonResponse({'success': False, 'error': '해당 리딤코드를 찾을 수 없습니다.'}, status=404)
@@ -212,11 +220,14 @@ class RedeemCodeValidationTestView(LoginRequiredMixin, UserPassesTestMixin, Temp
         try:
             redeem_code = RedeemCode.objects.get(email=email, code=code)
             
-            if redeem_code.is_used:
+            if redeem_code.status == RedeemCodeStatus.DELETED:
+                context['error'] = "삭제된 리딤코드입니다."
+                context['is_valid'] = False
+            elif redeem_code.status == RedeemCodeStatus.USED:
                 context['error'] = "이미 사용된 리딤코드입니다."
                 context['is_valid'] = False
             else:
-                redeem_code.is_used = True
+                redeem_code.status = RedeemCodeStatus.USED
                 redeem_code.save()
                 context['message'] = "리딤코드가 성공적으로 검증되었습니다."
                 context['is_valid'] = True
