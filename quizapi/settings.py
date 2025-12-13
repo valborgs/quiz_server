@@ -163,3 +163,6 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')  # App Password req
 
 # Slack Settings
 SLACK_WEBHOOK_URL = env('SLACK_WEBHOOK_URL', default='')
+
+# JWT Settings
+JWT_SECRET_KEY = env('JWT_SECRET_KEY', default='')

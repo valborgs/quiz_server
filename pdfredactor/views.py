@@ -11,13 +11,52 @@ class RedactPdfView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request, *args, **kwargs):
-        # 헤더 검증
+        # API Key 헤더 검증
         from django.conf import settings
         api_key = request.headers.get('X-Redact-Api-Key')
         if not api_key or api_key != settings.REDACT_API_KEY:
              return Response({
                 "error": "권한이 없습니다."
             }, status=status.HTTP_403_FORBIDDEN)
+
+        # JWT 토큰 검증
+        from redactor_pro_code_issuance.jwt_utils import verify_jwt_token
+        from redactor_pro_code_issuance.models import RedeemCode
+        
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return Response({
+                "message": "인증이 필요합니다. 리딤코드를 등록해주세요."
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Bearer 토큰 추출
+        if not auth_header.startswith('Bearer '):
+            return Response({
+                "message": "유효하지 않은 인증 토큰입니다."
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        token = auth_header[7:]  # "Bearer " 이후 부분
+        payload = verify_jwt_token(token)
+        
+        if payload is None:
+            return Response({
+                "message": "유효하지 않은 인증 토큰입니다."
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # DB에서 리딤코드의 현재 device_id 확인
+        redeem_code_str = payload.get('sub')
+        token_device_id = payload.get('device_id')
+        
+        try:
+            redeem_code = RedeemCode.objects.get(code=redeem_code_str)
+            if redeem_code.uuid != token_device_id:
+                return Response({
+                    "message": "다른 기기에서 Pro 기능이 활성화되어 있습니다. 리딤코드를 다시 등록하면 다른 기기의 Pro 기능이 비활성화됩니다."
+                }, status=status.HTTP_401_UNAUTHORIZED)
+        except RedeemCode.DoesNotExist:
+            return Response({
+                "message": "유효하지 않은 인증 토큰입니다."
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
         file_obj = request.FILES.get('file')
         redactions_json = request.data.get('redactions')

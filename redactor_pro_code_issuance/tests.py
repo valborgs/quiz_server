@@ -38,10 +38,10 @@ class RedeemCodeTests(TestCase):
         self.assertContains(response, "이미 사용된 리딤코드입니다.")
 
     def test_validate_code_success(self):
-        """리딤코드 검증 성공 테스트"""
+        """리딤코드 검증 성공 테스트 (JWT 토큰 포함)"""
         code = RedeemCode.objects.create(email='valid@example.com', code='VALID123')
         
-        data = {'email': 'valid@example.com', 'code': 'VALID123'}
+        data = {'email': 'valid@example.com', 'code': 'VALID123', 'uuid': 'device-uuid-123'}
         response = self.client.post(
             self.validation_url, 
             data, 
@@ -51,14 +51,16 @@ class RedeemCodeTests(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['is_valid'])
+        self.assertIn('jwt_token', response.data)
         
         # DB 업데이트 확인
         code.refresh_from_db()
         self.assertTrue(code.is_used)
+        self.assertEqual(code.uuid, 'deviceuuid123')
 
     def test_validate_code_invalid_header(self):
         """헤더 없이 또는 잘못된 키로 검증 요청 시 실패 테스트"""
-        data = {'email': 'valid@example.com', 'code': 'VALID123'}
+        data = {'email': 'valid@example.com', 'code': 'VALID123', 'uuid': 'device-uuid-123'}
         
         # 헤더 없음
         response = self.client.post(self.validation_url, data, content_type='application/json')
@@ -73,11 +75,11 @@ class RedeemCodeTests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_validate_code_already_used(self):
-        """이미 사용된 리딤코드 검증 실패 테스트"""
-        RedeemCode.objects.create(email='used@example.com', code='USED1234', is_used=True)
+    def test_validate_code_same_device_revalidation(self):
+        """이미 사용된 리딤코드를 같은 기기에서 재검증 시 성공 및 JWT 반환 테스트"""
+        RedeemCode.objects.create(email='used@example.com', code='USED1234', is_used=True, uuid='device-uuid-123')
         
-        data = {'email': 'used@example.com', 'code': 'USED1234'}
+        data = {'email': 'used@example.com', 'code': 'USED1234', 'uuid': 'device-uuid-123'}
         response = self.client.post(
             self.validation_url, 
             data, 
@@ -85,12 +87,34 @@ class RedeemCodeTests(TestCase):
             HTTP_X_REDEEM_API_KEY=self.api_key
         )
         
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertFalse(response.data['is_valid'])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['is_valid'])
+        self.assertIn('jwt_token', response.data)
+
+    def test_validate_code_device_transfer(self):
+        """기기 변경 시 새 JWT 토큰 발급 테스트"""
+        RedeemCode.objects.create(email='transfer@example.com', code='TRANS123', is_used=True, uuid='old-device')
+        
+        data = {'email': 'transfer@example.com', 'code': 'TRANS123', 'uuid': 'new-device'}
+        response = self.client.post(
+            self.validation_url, 
+            data, 
+            content_type='application/json',
+            HTTP_X_REDEEM_API_KEY=self.api_key
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['is_valid'])
+        self.assertIn('jwt_token', response.data)
+        self.assertIn('기존 기기', response.data['message'])
+        
+        # DB 업데이트 확인
+        code = RedeemCode.objects.get(code='TRANS123')
+        self.assertEqual(code.uuid, 'newdevice')
 
     def test_validate_code_not_found(self):
         """존재하지 않는 리딤코드 검증 실패 테스트"""
-        data = {'email': 'unknown@example.com', 'code': 'UNKNOWN1'}
+        data = {'email': 'unknown@example.com', 'code': 'UNKNOWN1', 'uuid': 'device-uuid-123'}
         response = self.client.post(
             self.validation_url, 
             data, 
@@ -105,7 +129,7 @@ class RedeemCodeTests(TestCase):
         """이메일과 코드가 일치하지 않는 경우 테스트"""
         RedeemCode.objects.create(email='mismatch@example.com', code='MATCH123')
         
-        data = {'email': 'mismatch@example.com', 'code': 'WRONG123'}
+        data = {'email': 'mismatch@example.com', 'code': 'WRONG123', 'uuid': 'device-uuid-123'}
         response = self.client.post(
             self.validation_url, 
             data, 
@@ -119,7 +143,12 @@ class RedeemCodeTests(TestCase):
     def test_issue_new_code(self):
         """새 이메일로 리딤코드 발급 테스트"""
         data = {'email': 'new@example.com'}
-        response = self.client.post(self.api_url, data, content_type='application/json')
+        response = self.client.post(
+            self.api_url, 
+            data, 
+            content_type='application/json',
+            HTTP_X_REDEEM_API_KEY=self.api_key
+        )
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data['is_new'])
@@ -132,10 +161,20 @@ class RedeemCodeTests(TestCase):
     def test_issue_existing_email(self):
         """이미 존재하는 이메일로 요청 시 새 리딤코드 발급 테스트"""
         # 첫 번째 발급
-        self.client.post(self.api_url, {'email': 'exist@example.com'}, content_type='application/json')
+        self.client.post(
+            self.api_url, 
+            {'email': 'exist@example.com'}, 
+            content_type='application/json',
+            HTTP_X_REDEEM_API_KEY=self.api_key
+        )
         
         # 두 번째 발급
-        response = self.client.post(self.api_url, {'email': 'exist@example.com'}, content_type='application/json')
+        response = self.client.post(
+            self.api_url, 
+            {'email': 'exist@example.com'}, 
+            content_type='application/json',
+            HTTP_X_REDEEM_API_KEY=self.api_key
+        )
         
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data['is_new'])
@@ -148,7 +187,12 @@ class RedeemCodeTests(TestCase):
     def test_invalid_email(self):
         """잘못된 이메일 형식 테스트"""
         data = {'email': 'invalid-email'}
-        response = self.client.post(self.api_url, data, content_type='application/json')
+        response = self.client.post(
+            self.api_url, 
+            data, 
+            content_type='application/json',
+            HTTP_X_REDEEM_API_KEY=self.api_key
+        )
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
