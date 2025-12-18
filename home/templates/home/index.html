@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Developer</title>
+    <meta name="description" content="이 개발자에게는 커피가 필요해요.">
+    <link rel="stylesheet" href="{% static 'home/css/style.css' %}">
+</head>
+
+<body>
+    <!-- 언어 토글 버튼 -->
+    <div class="lang-toggle">
+        <button class="lang-btn" onclick="toggleLanguage()">
+            <span id="langIcon">🌐</span>
+            <span id="langText">EN</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="message">
+            <img src="{% static 'home/images/meme.png' %}" alt="Meme"
+                style="max-width: 100%; height: auto; margin-bottom: 15px;"><br>
+            <div class="app-buttons" style="display: flex; justify-content: center; gap: 40px; margin-bottom: 15px;">
+                <a href="https://play.google.com/store/apps/details?id=org.comon.pdfredactorm" target="_blank"
+                    style="text-decoration: none; color: inherit;">
+                    <img src="{% static 'home/images/logo_android.png' %}" alt="Android Logo"
+                        style="width: 100px; height: 100px; display: block; margin-bottom: 8px; border-radius: 20px; padding: 10px; background: linear-gradient(145deg, #f8f9fa, #e9ecef); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);">
+                    <span style="font-size: 14px; font-weight: bold;">Android</span>
+                </a>
+                <a href="{% url 'home:pdf_redactor_pc' %}" style="text-decoration: none; color: inherit;">
+                    <img src="{% static 'home/images/logo_pc.png' %}" alt="PC Logo"
+                        style="width: 100px; height: 100px; display: block; margin-bottom: 8px; border-radius: 20px; padding: 10px; background: linear-gradient(145deg, #f8f9fa, #e9ecef); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);">
+                    <span style="font-size: 14px; font-weight: bold;">PC</span>
+                </a>
+            </div>
+            <div class="donation-messages">
+                <span data-i18n="donation_msg">이 개발자에게는 커피가 필요해요.</span><br>
+                <span style="font-size: 0.8em; color: #666;" data-i18n="donation_msg_sub">This developer needs a
+                    coffee.</span>
+            </div>
+            <div class="donation-widget">
+                <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
+                <script type='text/javascript'>
+                    kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'T6T81PN9KQ');
+                    kofiwidget2.draw();
+                </script>
+            </div>
+        </div>
+
+        <!-- 방명록 섹션 -->
+        <div class="guestbook-section">
+            <div class="guestbook-title">
+                📝 <span data-i18n="guestbook_title">방명록</span> <span
+                    style="font-size: 12px; font-weight: normal; color: #888;"
+                    data-i18n="guestbook_subtitle">Guestbook</span>
+            </div>
+            <div class="guestbook-form">
+                <div class="form-row">
+                    <input type="text" id="guestName" data-i18n-placeholder="name_placeholder"
+                        placeholder="이름 (미입력시 익명)" maxlength="20">
+                    <input type="password" id="guestPassword" data-i18n-placeholder="password_placeholder"
+                        placeholder="비밀번호 (삭제용)" maxlength="20">
+                </div>
+                <textarea id="guestContent" data-i18n-placeholder="content_placeholder"
+                    placeholder="응원의 메시지를 남겨주세요! (최대 4줄)" rows="4" maxlength="200"></textarea>
+                <div class="char-counter"><span id="charCount">0</span>/200</div>
+                <button class="submit-btn" id="submitBtn" onclick="submitGuestbook()" data-i18n="submit_btn">✨
+                    등록하기</button>
+            </div>
+            <div class="guestbook-list" id="guestbookList"></div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- 삭제 확인 모달 -->
+        <div class="modal-overlay" id="deleteModal">
+            <div class="modal-content">
+                <div class="modal-title" data-i18n="modal_title">🔐 비밀번호 확인</div>
+                <input type="password" class="modal-input" id="deletePassword"
+                    data-i18n-placeholder="modal_password_placeholder" placeholder="비밀번호를 입력하세요">
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" onclick="closeDeleteModal()" data-i18n="modal_cancel">취소</button>
+                    <button class="modal-btn confirm" id="confirmDeleteBtn" onclick="confirmDelete()"
+                        data-i18n="modal_delete">삭제</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="{% static 'home/js/script.js' %}"></script>
+    </div>
+</body>
+
+</html>

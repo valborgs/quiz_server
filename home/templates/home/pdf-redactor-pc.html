@@ -1,0 +1,736 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PDF Mask - PDF 문서의 민감한 정보를 안전하고 간편하게 마스킹하는 도구">
+    <title>PDF Mask - 간편한 PDF 개인정보 마스킹</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --primary-dark: #357ABD;
+            --accent: #FF6B6B;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --text-light: #eef0f5;
+            --text-muted: #a8b2c1;
+            --gradient-start: #667eea;
+            --gradient-end: #764ba2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f0c29 50%, var(--bg-card) 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* 언어 토글 버튼 */
+        .lang-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-light);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 60px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 50%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        .hero-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.5));
+            animation: float 3s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+            border-radius: 24px;
+            padding: 12px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 0 20px rgba(102, 126, 234, 0.1);
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero .tagline {
+            font-size: 1.4rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 600px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 18px 45px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Section Styles */
+        section {
+            padding: 80px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            margin: 15px auto 0;
+            border-radius: 2px;
+        }
+
+        /* Who Needs This */
+        .who-needs {
+            background: rgba(22, 33, 62, 0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        .use-cases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .use-case-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 35px;
+            transition: all 0.3s ease;
+        }
+
+        .use-case-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .use-case-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .use-case-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+
+        .use-case-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* Features */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .feature-item .icon {
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+
+        .feature-item h4 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .feature-item p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        /* How It Works */
+        .how-it-works {
+            background: rgba(22, 33, 62, 0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 25px;
+            position: relative;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+        }
+
+        /* Safety Notice */
+        .safety {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .safety-box {
+            background: linear-gradient(145deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .safety-box .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .safety-box h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .safety-box p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        /* Download Section */
+        .download-section {
+            text-align: center;
+            padding: 100px 20px;
+            background: linear-gradient(180deg, transparent, rgba(102, 126, 234, 0.1));
+        }
+
+        .download-section h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .download-section p {
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        .download-logo {
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .download-logo:hover {
+            transform: scale(1.1);
+        }
+
+        .download-logo img {
+            width: 100px;
+            height: 100px;
+            filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.6));
+            animation: glow 2s ease-in-out infinite alternate;
+            border-radius: 20px;
+            padding: 10px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 0 20px rgba(102, 126, 234, 0.1);
+        }
+
+        @keyframes glow {
+            from {
+                filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.4));
+            }
+
+            to {
+                filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.8));
+            }
+        }
+
+        .download-text {
+            display: block;
+            margin-top: 15px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero .tagline {
+                font-size: 1.1rem;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .step {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 언어 토글 버튼 -->
+    <div class="lang-toggle">
+        <button class="lang-btn" onclick="toggleLanguage()">
+            <span id="langIcon">🌐</span>
+            <span id="langText">EN</span>
+        </button>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <img src="{% static 'home/images/logo_pc.png' %}" alt="PDF Mask Logo" class="hero-logo">
+        <h1>PDF Mask</h1>
+        <p class="tagline" data-i18n="hero_tagline">
+            PDF 문서의 민감한 정보를 안전하고 간편하게 마스킹하세요.<br>
+            드래그 한 번으로 개인정보를 완벽하게 보호합니다.
+        </p>
+        <a href="https://www.mediafire.com/file/e3px7zic20q6luq/PDFMask.exe/file" class="cta-button"
+            data-i18n="hero_cta">
+            📥 지금 다운로드
+        </a>
+    </section>
+
+    <!-- Who Needs This -->
+    <section class="who-needs">
+        <div class="container">
+            <h2 class="section-title" data-i18n="who_needs_title">이런 분들께 필요합니다</h2>
+            <div class="use-cases">
+                <div class="use-case-card">
+                    <div class="icon">🏢</div>
+                    <h3 data-i18n="case1_title">기업 담당자</h3>
+                    <p data-i18n="case1_desc">계약서, 견적서, 내부 문서에서 민감한 금액이나 조건을 가려야 할 때. 거래처에 보낼 자료에서 특정 정보만 숨겨야 할 때 유용합니다.
+                    </p>
+                </div>
+                <div class="use-case-card">
+                    <div class="icon">⚖️</div>
+                    <h3 data-i18n="case2_title">법률/행정 업무</h3>
+                    <p data-i18n="case2_desc">법률 문서, 행정 서류에서 개인정보를 제거해야 할 때. 주민등록번호, 전화번호, 주소 등을 완벽하게 삭제할 수 있습니다.</p>
+                </div>
+                <div class="use-case-card">
+                    <div class="icon">🏥</div>
+                    <h3 data-i18n="case3_title">의료/교육 기관</h3>
+                    <p data-i18n="case3_desc">진료 기록, 성적표, 증명서 등에서 개인을 식별할 수 있는 정보를 마스킹해야 할 때 사용하세요.</p>
+                </div>
+                <div class="use-case-card">
+                    <div class="icon">💼</div>
+                    <h3 data-i18n="case4_title">프리랜서/개인</h3>
+                    <p data-i18n="case4_desc">이력서, 포트폴리오, 개인 문서를 공유할 때 불필요한 개인정보를 가리고 싶으신 분들께 추천합니다.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title" data-i18n="features_title">주요 특징</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="icon">🖱️</div>
+                    <div>
+                        <h4 data-i18n="feature1_title">직관적인 조작</h4>
+                        <p data-i18n="feature1_desc">Ctrl+드래그로 마스킹할 영역을 선택하면 끝. 복잡한 설정 없이 바로 사용 가능합니다.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="icon">🔒</div>
+                    <div>
+                        <h4 data-i18n="feature2_title">완전 삭제</h4>
+                        <p data-i18n="feature2_desc">단순히 가리는 것이 아니라 원본 데이터 자체를 영구적으로 제거합니다. 복구가 불가능합니다.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="icon">📂</div>
+                    <div>
+                        <h4 data-i18n="feature3_title">대량 처리</h4>
+                        <p data-i18n="feature3_desc">폴더 단위로 여러 PDF를 불러와 순차적으로 작업할 수 있어 업무 효율이 높아집니다.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="icon">💾</div>
+                    <div>
+                        <h4 data-i18n="feature4_title">작업 이력 관리</h4>
+                        <p data-i18n="feature4_desc">마스킹 위치와 메모가 자동 기록되어 나중에 어떤 작업을 했는지 확인할 수 있습니다.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="icon">🔐</div>
+                    <div>
+                        <h4 data-i18n="feature5_title">암호 PDF 지원</h4>
+                        <p data-i18n="feature5_desc">암호로 보호된 PDF 파일도 비밀번호를 입력하면 열어서 마스킹할 수 있습니다.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="icon">📊</div>
+                    <div>
+                        <h4 data-i18n="feature6_title">엑셀 내보내기</h4>
+                        <p data-i18n="feature6_desc">마스킹 작업 내역을 엑셀 파일로 내보내 보고서 작성이나 기록 보관에 활용하세요.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title" data-i18n="how_title">이렇게 간단합니다</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4 data-i18n="step1_title">PDF 파일 열기</h4>
+                        <p data-i18n="step1_desc">마스킹할 PDF 파일이나 폴더를 선택해서 불러옵니다.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4 data-i18n="step2_title">영역 선택</h4>
+                        <p data-i18n="step2_desc">Ctrl 키를 누른 채로 마스킹할 부분을 드래그합니다. 파란색으로 표시됩니다.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4 data-i18n="step3_title">저장</h4>
+                        <p data-i18n="step3_desc">Ctrl+S를 누르면 선택한 영역이 완전히 삭제되고 결과가 저장됩니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Safety Notice -->
+    <section class="safety">
+        <div class="container">
+            <div class="safety-box">
+                <div class="icon">🛡️</div>
+                <h3 data-i18n="safety_title">안전하게 설계되었습니다</h3>
+                <p data-i18n="safety_desc">
+                    마스킹된 정보는 PDF에서 완전히 삭제되어 어떤 방법으로도 복구할 수 없습니다.<br>
+                    마스킹 결과는 별도 폴더에 저장되어 원본 파일은 그대로 보존됩니다.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="download-section">
+        <div class="container">
+            <h2 data-i18n="download_title">지금 바로 시작하세요</h2>
+            <p data-i18n="download_desc">Windows에서 바로 실행 가능한 프로그램을 다운로드하세요.</p>
+            <a href="https://www.mediafire.com/file/e3px7zic20q6luq/PDFMask.exe/file" class="download-logo">
+                <img src="{% static 'home/images/logo_pc.png' %}" alt="PDF Mask Download">
+                <span class="download-text" data-i18n="download_click">클릭하여 다운로드</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2025 PDF Mask. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // 다국어 번역 데이터
+        const translations = {
+            ko: {
+                hero_tagline: "PDF 문서의 민감한 정보를 안전하고 간편하게 마스킹하세요.<br>드래그 한 번으로 개인정보를 완벽하게 보호합니다.",
+                hero_cta: "📥 지금 다운로드",
+                who_needs_title: "이런 분들께 필요합니다",
+                case1_title: "기업 담당자",
+                case1_desc: "계약서, 견적서, 내부 문서에서 민감한 금액이나 조건을 가려야 할 때. 거래처에 보낼 자료에서 특정 정보만 숨겨야 할 때 유용합니다.",
+                case2_title: "법률/행정 업무",
+                case2_desc: "법률 문서, 행정 서류에서 개인정보를 제거해야 할 때. 주민등록번호, 전화번호, 주소 등을 완벽하게 삭제할 수 있습니다.",
+                case3_title: "의료/교육 기관",
+                case3_desc: "진료 기록, 성적표, 증명서 등에서 개인을 식별할 수 있는 정보를 마스킹해야 할 때 사용하세요.",
+                case4_title: "프리랜서/개인",
+                case4_desc: "이력서, 포트폴리오, 개인 문서를 공유할 때 불필요한 개인정보를 가리고 싶으신 분들께 추천합니다.",
+                features_title: "주요 특징",
+                feature1_title: "직관적인 조작",
+                feature1_desc: "Ctrl+드래그로 마스킹할 영역을 선택하면 끝. 복잡한 설정 없이 바로 사용 가능합니다.",
+                feature2_title: "완전 삭제",
+                feature2_desc: "단순히 가리는 것이 아니라 원본 데이터 자체를 영구적으로 제거합니다. 복구가 불가능합니다.",
+                feature3_title: "대량 처리",
+                feature3_desc: "폴더 단위로 여러 PDF를 불러와 순차적으로 작업할 수 있어 업무 효율이 높아집니다.",
+                feature4_title: "작업 이력 관리",
+                feature4_desc: "마스킹 위치와 메모가 자동 기록되어 나중에 어떤 작업을 했는지 확인할 수 있습니다.",
+                feature5_title: "암호 PDF 지원",
+                feature5_desc: "암호로 보호된 PDF 파일도 비밀번호를 입력하면 열어서 마스킹할 수 있습니다.",
+                feature6_title: "엑셀 내보내기",
+                feature6_desc: "마스킹 작업 내역을 엑셀 파일로 내보내 보고서 작성이나 기록 보관에 활용하세요.",
+                how_title: "이렇게 간단합니다",
+                step1_title: "PDF 파일 열기",
+                step1_desc: "마스킹할 PDF 파일이나 폴더를 선택해서 불러옵니다.",
+                step2_title: "영역 선택",
+                step2_desc: "Ctrl 키를 누른 채로 마스킹할 부분을 드래그합니다. 파란색으로 표시됩니다.",
+                step3_title: "저장",
+                step3_desc: "Ctrl+S를 누르면 선택한 영역이 완전히 삭제되고 결과가 저장됩니다.",
+                safety_title: "안전하게 설계되었습니다",
+                safety_desc: "마스킹된 정보는 PDF에서 완전히 삭제되어 어떤 방법으로도 복구할 수 없습니다.<br>마스킹 결과는 별도 폴더에 저장되어 원본 파일은 그대로 보존됩니다.",
+                download_title: "지금 바로 시작하세요",
+                download_desc: "Windows에서 바로 실행 가능한 프로그램을 다운로드하세요.",
+                download_click: "클릭하여 다운로드"
+            },
+            en: {
+                hero_tagline: "Safely and easily mask sensitive information in PDF documents.<br>Protect personal data with just one drag.",
+                hero_cta: "📥 Download Now",
+                who_needs_title: "Who Needs This",
+                case1_title: "Business Professionals",
+                case1_desc: "When you need to hide sensitive amounts or terms in contracts, quotes, or internal documents. Useful for hiding specific information in materials sent to clients.",
+                case2_title: "Legal/Administrative Work",
+                case2_desc: "When you need to remove personal information from legal documents or administrative paperwork. Completely delete SSNs, phone numbers, addresses, etc.",
+                case3_title: "Healthcare/Education",
+                case3_desc: "Use this when you need to mask personally identifiable information in medical records, transcripts, or certificates.",
+                case4_title: "Freelancers/Individuals",
+                case4_desc: "Recommended for those who want to hide unnecessary personal information when sharing resumes, portfolios, or personal documents.",
+                features_title: "Key Features",
+                feature1_title: "Intuitive Controls",
+                feature1_desc: "Just Ctrl+drag to select the area to mask. Ready to use without complex settings.",
+                feature2_title: "Complete Deletion",
+                feature2_desc: "Not just covering up - permanently removes the original data itself. Recovery is impossible.",
+                feature3_title: "Batch Processing",
+                feature3_desc: "Load multiple PDFs from a folder and process them sequentially for improved workflow efficiency.",
+                feature4_title: "Work History Management",
+                feature4_desc: "Masking positions and notes are automatically recorded so you can check what work was done later.",
+                feature5_title: "Password PDF Support",
+                feature5_desc: "Password-protected PDF files can be opened and masked by entering the password.",
+                feature6_title: "Excel Export",
+                feature6_desc: "Export masking work history to Excel files for report creation or record keeping.",
+                how_title: "It's This Simple",
+                step1_title: "Open PDF File",
+                step1_desc: "Select and load the PDF file or folder to mask.",
+                step2_title: "Select Area",
+                step2_desc: "Hold Ctrl and drag over the part to mask. It will be highlighted in blue.",
+                step3_title: "Save",
+                step3_desc: "Press Ctrl+S to completely delete the selected area and save the result.",
+                safety_title: "Designed for Safety",
+                safety_desc: "Masked information is completely deleted from the PDF and cannot be recovered by any method.<br>Masking results are saved in a separate folder, keeping the original file intact.",
+                download_title: "Get Started Now",
+                download_desc: "Download the program that runs directly on Windows.",
+                download_click: "Click to Download"
+            }
+        };
+
+        // 현재 언어 (기본값: 시스템 언어 감지)
+        let currentLang = detectLanguage();
+
+        // 시스템/브라우저 언어 감지
+        function detectLanguage() {
+            const savedLang = localStorage.getItem('preferredLanguage');
+            if (savedLang) return savedLang;
+
+            const browserLang = navigator.language || navigator.userLanguage;
+            return browserLang.startsWith('ko') ? 'ko' : 'en';
+        }
+
+        // 언어 토글
+        function toggleLanguage() {
+            currentLang = currentLang === 'ko' ? 'en' : 'ko';
+            localStorage.setItem('preferredLanguage', currentLang);
+            applyLanguage();
+        }
+
+        // 언어 적용
+        function applyLanguage() {
+            const trans = translations[currentLang];
+
+            // 토글 버튼 텍스트 업데이트
+            document.getElementById('langText').textContent = currentLang === 'ko' ? 'EN' : '한국어';
+
+            // HTML lang 속성 업데이트
+            document.documentElement.lang = currentLang;
+
+            // data-i18n 속성 업데이트
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (trans[key] !== undefined) {
+                    el.innerHTML = trans[key];
+                }
+            });
+        }
+
+        // 초기화
+        applyLanguage();
+    </script>
+</body>
+
+</html>

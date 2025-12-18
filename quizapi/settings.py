@@ -33,7 +33,12 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'comon.dev',        # 실제 서비스 도메인
+    'www.comon.dev',
+    '127.0.0.1',        # 내부 통신용 (보통 남겨둠)
+    'localhost'
+]
 
 CORS_ALLOWED_ORIGINS = [
     "https://ums1212.github.io",
@@ -59,6 +64,7 @@ INSTALLED_APPS = [
     'pdfredactor',
     'redactor_pro_code_issuance',
     'guestbook',
+    'home',
 ]
 
 MIDDLEWARE = [

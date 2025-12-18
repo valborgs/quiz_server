@@ -30,4 +30,5 @@ urlpatterns = [
     path('api/pdf/', include('pdfredactor.urls')),
     path('api/pdf-redeem/', include('redactor_pro_code_issuance.urls')),
     path('api/', include('guestbook.urls')),
+    path('', include('home.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_URL) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
