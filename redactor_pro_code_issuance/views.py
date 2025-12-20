@@ -50,7 +50,8 @@ class RedeemCodeValidationAPIView(APIView):
         api_key = request.headers.get('X-Redeem-Api-Key')
         if not api_key or api_key != settings.REDEEM_API_KEY:
              return Response({
-                "message": "권한이 없습니다."
+                "message": "권한이 없습니다.",
+                "error_code": 1002
             }, status=status.HTTP_403_FORBIDDEN)
 
         serializer = RedeemCodeValidationSerializer(data=request.data)
@@ -69,7 +70,8 @@ class RedeemCodeValidationAPIView(APIView):
                 if redeem_code.status == RedeemCodeStatus.DELETED:
                     return Response({
                         "message": "삭제된 리딤코드입니다.",
-                        "is_valid": False
+                        "is_valid": False,
+                        "error_code": 4001
                     }, status=status.HTTP_400_BAD_REQUEST)
 
                 # 사용되지 않은 코드라면: 현재 기기에 바인딩하고 사용 처리
@@ -108,10 +110,15 @@ class RedeemCodeValidationAPIView(APIView):
             except RedeemCode.DoesNotExist:
                 return Response({
                     "message": "유효하지 않은 이메일 또는 리딤코드입니다.",
-                    "is_valid": False
+                    "is_valid": False,
+                    "error_code": 4002
                 }, status=status.HTTP_404_NOT_FOUND)
                 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "message": "유효하지 않은 데이터 형식입니다.",
+            "errors": serializer.errors,
+            "error_code": 3003
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 

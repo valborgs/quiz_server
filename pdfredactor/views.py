@@ -16,7 +16,8 @@ class RedactPdfView(APIView):
         api_key = request.headers.get('X-Redact-Api-Key')
         if not api_key or api_key != settings.REDACT_API_KEY:
              return Response({
-                "error": "권한이 없습니다."
+                "message": "권한이 없습니다.",
+                "error_code": 1001
             }, status=status.HTTP_403_FORBIDDEN)
 
         # JWT 토큰 검증
@@ -26,13 +27,15 @@ class RedactPdfView(APIView):
         auth_header = request.headers.get('Authorization')
         if not auth_header:
             return Response({
-                "message": "인증이 필요합니다. 리딤코드를 등록해주세요."
+                "message": "인증이 필요합니다. 리딤코드를 등록해주세요.",
+                "error_code": 2001
             }, status=status.HTTP_401_UNAUTHORIZED)
         
         # Bearer 토큰 추출
         if not auth_header.startswith('Bearer '):
             return Response({
-                "message": "유효하지 않은 인증 토큰입니다."
+                "message": "유효하지 않은 인증 토큰입니다.",
+                "error_code": 2002
             }, status=status.HTTP_401_UNAUTHORIZED)
         
         token = auth_header[7:]  # "Bearer " 이후 부분
@@ -40,7 +43,8 @@ class RedactPdfView(APIView):
         
         if payload is None:
             return Response({
-                "message": "유효하지 않은 인증 토큰입니다."
+                "message": "유효하지 않은 인증 토큰입니다.",
+                "error_code": 2002
             }, status=status.HTTP_401_UNAUTHORIZED)
         
         # DB에서 리딤코드의 현재 device_id 확인
@@ -51,11 +55,13 @@ class RedactPdfView(APIView):
             redeem_code = RedeemCode.objects.get(code=redeem_code_str)
             if redeem_code.uuid != token_device_id:
                 return Response({
-                    "message": "다른 기기에서 Pro 기능이 활성화되어 있습니다. 리딤코드를 다시 등록하면 다른 기기의 Pro 기능이 비활성화됩니다."
+                    "message": "다른 기기에서 Pro 기능이 활성화되어 있습니다. 리딤코드를 다시 등록하면 다른 기기의 Pro 기능이 비활성화됩니다.",
+                    "error_code": 2003
                 }, status=status.HTTP_401_UNAUTHORIZED)
         except RedeemCode.DoesNotExist:
             return Response({
-                "message": "유효하지 않은 인증 토큰입니다."
+                "message": "유효하지 않은 인증 토큰입니다.",
+                "error_code": 2002
             }, status=status.HTTP_401_UNAUTHORIZED)
 
         file_obj = request.FILES.get('file')
@@ -63,7 +69,10 @@ class RedactPdfView(APIView):
 
         if not file_obj or not redactions_json:
             return Response(
-                {"error": "Both 'file' and 'redactions' are required."},
+                {
+                    "message": "필수 파라미터(file, redactions)가 누락되었습니다.",
+                    "error_code": 3001
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -71,7 +80,10 @@ class RedactPdfView(APIView):
             redactions = json.loads(redactions_json)
         except json.JSONDecodeError:
             return Response(
-                {"error": "Invalid JSON format for 'redactions'."},
+                {
+                    "message": "마스킹 데이터(redactions) 형식이 올바르지 않습니다.",
+                    "error_code": 3002
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -197,6 +209,9 @@ class RedactPdfView(APIView):
 
         except Exception as e:
             return Response(
-                {"error": str(e)},
+                {
+                    "message": f"서버 내부 오류가 발생했습니다: {str(e)}",
+                    "error_code": 5001
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

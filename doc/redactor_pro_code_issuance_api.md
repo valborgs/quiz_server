@@ -48,16 +48,16 @@
 **Error (400 Bad Request)**
 ```json
 {
-  "email": [
-    "유효한 이메일 주소를 입력하십시오."
-  ]
+  "message": "유효한 이메일 주소를 입력하십시오.",
+  "error_code": 3003
 }
 ```
 
 **Error (403 Forbidden)**
 ```json
 {
-  "message": "권한이 없습니다."
+  "message": "권한이 없습니다.",
+  "error_code": 1002
 }
 ```
 
@@ -114,17 +114,39 @@
 }
 ```
 
+## 에러 코드 (Error Codes)
+
+| 에러 코드 | HTTP 상태 | 설명 |
+| :--- | :--- | :--- |
+| **1002** | 403 Forbidden | API Key (`X-Redeem-Api-Key`) 검증 실패 |
+| **3003** | 400 Bad Request | 유효하지 않은 데이터 형식 (이메일 누락 등) |
+| **4001** | 400 Bad Request | **삭제됨**: 이미 삭제 처리된 리딤코드 |
+| **4002** | 404 Not Found | **유효하지 않음**: DB에 존재하지 않는 이메일/코드 조합 |
+
+### 에러 응답 예시
+
 **Error (403 Forbidden)**
 ```json
 {
-  "message": "권한이 없습니다."
+  "message": "권한이 없습니다.",
+  "error_code": 1002
 }
 ```
 
-**Error (404 Not Found - Invalid Code/Email)**
+**Error (400 Bad Request - Deleted)**
+```json
+{
+  "message": "삭제된 리딤코드입니다.",
+  "is_valid": false,
+  "error_code": 4001
+}
+```
+
+**Error (404 Not Found - Invalid)**
 ```json
 {
   "message": "유효하지 않은 이메일 또는 리딤코드입니다.",
-  "is_valid": false
+  "is_valid": false,
+  "error_code": 4002
 }
 ```

@@ -46,29 +46,43 @@
 - **Content-Disposition**: `attachment; filename="redacted_result.pdf"`
 - **Body**: 처리된(마스킹 적용된) PDF 파일의 바이너리 데이터.
 
-### 실패 (400 Bad Request)
+## 에러 코드 (Error Codes)
 
-요청 파라미터가 누락되었거나 JSON 형식이 올바르지 않은 경우 반환됩니다.
+클라이언트는 `error_code` 필드를 바탕으로 에러 상황을 분류하여 처리할 수 있습니다.
 
+| 에러 코드 | HTTP 상태 | 설명 |
+| :--- | :--- | :--- |
+| **1001** | 403 Forbidden | API Key (`X-Redact-Api-Key`)가 없거나 올바르지 않음 |
+| **2001** | 401 Unauthorized | `Authorization` 헤더가 없음 |
+| **2002** | 401 Unauthorized | 인증 토큰이 유효하지 않거나 만료됨 |
+| **2003** | 401 Unauthorized | **기기 미매칭**: 다른 기기에서 Pro 기능이 활성화됨 (재등록 필요) |
+| **3001** | 400 Bad Request | 필수 파라미터(`file`, `redactions`) 누락 |
+| **3002** | 400 Bad Request | `redactions` JSON 데이터의 형식이 올바르지 않음 |
+| **5001** | 500 Internal Server Error | 서버 내부 로직 처리 중 발생한 알 수 없는 오류 |
+
+### 에러 응답 예시
+
+#### 실패 (401 Unauthorized - 기기 미매칭)
 ```json
 {
-  "error": "Both 'file' and 'redactions' are required."
+  "message": "다른 기기에서 Pro 기능이 활성화되어 있습니다. 리딤코드를 다시 등록하면 다른 기기의 Pro 기능이 비활성화됩니다.",
+  "error_code": 2003
 }
 ```
-또는
+
+#### 실패 (400 Bad Request - 파라미터 누락)
 ```json
 {
-  "error": "Invalid JSON format for 'redactions'."
+  "message": "필수 파라미터(file, redactions)가 누락되었습니다.",
+  "error_code": 3001
 }
 ```
 
-### 실패 (500 Internal Server Error)
-
-서버 내부 오류 발생 시 반환됩니다.
-
+#### 실패 (500 Internal Server Error)
 ```json
 {
-  "error": "Error message details..."
+  "message": "서버 내부 오류가 발생했습니다: ...",
+  "error_code": 5001
 }
 ```
 
