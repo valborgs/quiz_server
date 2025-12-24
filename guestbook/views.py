@@ -19,6 +19,7 @@ class GuestbookPagination(PageNumberPagination):
 
 class GuestbookListCreateView(APIView):
     """방명록 목록 조회 및 작성 API"""
+    authentication_classes = []
     
     def get(self, request):
         """방명록 목록 조회 (페이지네이션 적용)"""
@@ -42,6 +43,7 @@ class GuestbookListCreateView(APIView):
 
 class GuestbookDeleteView(APIView):
     """방명록 삭제 API"""
+    authentication_classes = []
     
     def delete(self, request, pk):
         """방명록 삭제 (비밀번호 확인)"""
