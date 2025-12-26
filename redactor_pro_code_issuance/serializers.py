@@ -17,3 +17,13 @@ class RedeemCodeValidationSerializer(serializers.Serializer):
 
     def validate_uuid(self, value):
         return value.replace('-', '')
+
+class RedeemCodeCheckDeviceSerializer(serializers.Serializer):
+    """
+    리딤코드 기기 정합성 체크 요청 시 코드와 UUID를 검증하는 Serializer
+    """
+    code = serializers.CharField(required=True, min_length=8, max_length=8)
+    uuid = serializers.CharField(required=True)
+
+    def validate_uuid(self, value):
+        return value.replace('-', '')

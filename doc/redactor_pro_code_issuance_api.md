@@ -150,3 +150,73 @@
   "error_code": 4002
 }
 ```
+
+---
+
+## 3. 리딤코드 기기 정합성 체크 (Check Device)
+
+이미 등록된 리딤코드가 현재 기기(UUID)와 일치하는지 확인합니다.
+- **불일치**: 상태가 `USED`이고 저장된 UUID가 입력된 UUID와 다른 경우, `is_mismatch: True`와 함께 비활성화 메시지를 반환합니다.
+- **정상**: 기기가 일치하거나 아직 사용되지 않은 경우 `is_mismatch: False`를 반환합니다.
+
+### 요청 (Request)
+
+- **URL**: `/api/redeem/check-device/`
+- **Method**: `POST`
+- **Content-Type**: `application/json`
+- **Headers**:
+    - `X-Redeem-Api-Key`: `16자리 랜덤 문자열` (필수)
+
+**Body Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `code` | string | Yes | 8자리 리딤코드 |
+| `uuid` | string | Yes | 기기 고유 식별자 (UUID) |
+
+### 응답 (Response)
+
+**Success (200 OK - Mismatch Found)**
+```json
+{
+  "is_mismatch": true,
+  "message": "다른 기기에서 pro 기능이 활성화되었습니다. 현재 기기의 pro 기능을 비활성화합니다."
+}
+```
+
+**Success (200 OK - Normal/Matched)**
+```json
+{
+  "is_mismatch": false,
+  "message": "정상적으로 활성화된 상태입니다."
+}
+```
+
+**Error (404 Not Found - Invalid Code)**
+```json
+{
+  "message": "유효하지 않은 리딤코드입니다.",
+  "is_mismatch": false,
+  "error_code": 4002
+}
+```
+
+**Error (400 Bad Request - Invalid Data)**
+```json
+{
+  "message": "유효하지 않은 데이터 형식입니다.",
+  "is_mismatch": false,
+  "errors": {
+    "code": ["이 필드는 필수 항목입니다."]
+  },
+  "error_code": 3003
+}
+```
+
+**Error (403 Forbidden)**
+```json
+{
+  "message": "권한이 없습니다.",
+  "error_code": 1002
+}
+```

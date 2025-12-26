@@ -1,13 +1,14 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from rest_framework import status
-from .models import RedeemCode
+from .models import RedeemCode, RedeemCodeStatus
 
 class RedeemCodeTests(TestCase):
     def setUp(self):
         self.client = Client()
         self.api_url = reverse('redeem-issue-api')
         self.validation_url = reverse('redeem-validate-api')
+        self.check_device_url = reverse('redeem-check-device-api')
         self.dashboard_url = reverse('redeem-dashboard')
         self.validation_test_url = reverse('redeem-validation-test')
         from django.conf import settings
@@ -30,12 +31,64 @@ class RedeemCodeTests(TestCase):
         response = self.client.post(self.validation_test_url, data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "리딤코드가 성공적으로 검증되었습니다.")
-        self.assertTrue(RedeemCode.objects.get(email='test_val@example.com').is_used)
+        self.assertEqual(RedeemCode.objects.get(email='test_val@example.com').status, RedeemCodeStatus.USED)
 
         # 3. 이미 사용된 코드 검증
         response = self.client.post(self.validation_test_url, data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "이미 사용된 리딤코드입니다.")
+
+    def test_check_device_mismatch(self):
+        """기기 불일치 체크 테스트"""
+        RedeemCode.objects.create(
+            email='mismatch@example.com', 
+            code='MISMATCH', 
+            status=RedeemCodeStatus.USED, 
+            uuid='registered-device'
+        )
+        
+        data = {'code': 'MISMATCH', 'uuid': 'wrong-device'}
+        response = self.client.post(
+            self.check_device_url, 
+            data, 
+            content_type='application/json',
+            HTTP_X_REDEEM_API_KEY=self.api_key
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['is_mismatch'])
+        self.assertIn('비활성화', response.data['message'])
+
+    def test_check_device_normal(self):
+        """기기 일치 또는 미사용 상태 체크 테스트"""
+        # 1. 기기 일치
+        RedeemCode.objects.create(
+            email='match@example.com', 
+            code='MATCH123', 
+            status=RedeemCodeStatus.USED, 
+            uuid='registereddevice'
+        )
+        data = {'code': 'MATCH123', 'uuid': 'registered-device'}
+        response = self.client.post(
+            self.check_device_url, 
+            data, 
+            content_type='application/json',
+            HTTP_X_REDEEM_API_KEY=self.api_key
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_mismatch'])
+
+        # 2. 미사용 코드
+        RedeemCode.objects.create(email='unused@example.com', code='UNUSED12')
+        data = {'code': 'UNUSED12', 'uuid': 'any-device'}
+        response = self.client.post(
+            self.check_device_url, 
+            data, 
+            content_type='application/json',
+            HTTP_X_REDEEM_API_KEY=self.api_key
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_mismatch'])
 
     def test_validate_code_success(self):
         """리딤코드 검증 성공 테스트 (JWT 토큰 포함)"""
@@ -55,7 +108,7 @@ class RedeemCodeTests(TestCase):
         
         # DB 업데이트 확인
         code.refresh_from_db()
-        self.assertTrue(code.is_used)
+        self.assertEqual(code.status, RedeemCodeStatus.USED)
         self.assertEqual(code.uuid, 'deviceuuid123')
 
     def test_validate_code_invalid_header(self):
@@ -77,7 +130,7 @@ class RedeemCodeTests(TestCase):
 
     def test_validate_code_same_device_revalidation(self):
         """이미 사용된 리딤코드를 같은 기기에서 재검증 시 성공 및 JWT 반환 테스트"""
-        RedeemCode.objects.create(email='used@example.com', code='USED1234', is_used=True, uuid='device-uuid-123')
+        RedeemCode.objects.create(email='used@example.com', code='USED1234', status=RedeemCodeStatus.USED, uuid='device-uuid-123')
         
         data = {'email': 'used@example.com', 'code': 'USED1234', 'uuid': 'device-uuid-123'}
         response = self.client.post(
@@ -93,7 +146,7 @@ class RedeemCodeTests(TestCase):
 
     def test_validate_code_device_transfer(self):
         """기기 변경 시 새 JWT 토큰 발급 테스트"""
-        RedeemCode.objects.create(email='transfer@example.com', code='TRANS123', is_used=True, uuid='old-device')
+        RedeemCode.objects.create(email='transfer@example.com', code='TRANS123', status=RedeemCodeStatus.USED, uuid='old-device')
         
         data = {'email': 'transfer@example.com', 'code': 'TRANS123', 'uuid': 'new-device'}
         response = self.client.post(

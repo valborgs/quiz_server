@@ -4,7 +4,7 @@ from rest_framework import status
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from .models import RedeemCode, RedeemCodeStatus
-from .serializers import RedeemCodeSerializer, RedeemCodeValidationSerializer
+from .serializers import RedeemCodeSerializer, RedeemCodeValidationSerializer, RedeemCodeCheckDeviceSerializer
 
 class RedeemCodeIssueAPIView(APIView):
     """
@@ -116,6 +116,56 @@ class RedeemCodeValidationAPIView(APIView):
                 
         return Response({
             "message": "유효하지 않은 데이터 형식입니다.",
+            "errors": serializer.errors,
+            "error_code": 3003
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+class RedeemCodeDeviceCheckAPIView(APIView):
+    """
+    리딤코드 기기 정합성 체크 API
+    POST /api/redeem/check-device/
+    """
+    def post(self, request):
+        # 헤더 검증
+        from django.conf import settings
+        api_key = request.headers.get('X-Redeem-Api-Key')
+        if not api_key or api_key != settings.REDEEM_API_KEY:
+             return Response({
+                "message": "권한이 없습니다.",
+                "error_code": 1002
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = RedeemCodeCheckDeviceSerializer(data=request.data)
+        if serializer.is_valid():
+            code = serializer.validated_data['code']
+            uuid = serializer.validated_data['uuid']
+            
+            try:
+                redeem_code = RedeemCode.objects.get(code=code)
+                
+                # 사용 중이면서 UUID가 다른 경우 (Mismatch)
+                if redeem_code.status == RedeemCodeStatus.USED and redeem_code.uuid != uuid:
+                    return Response({
+                        "is_mismatch": True,
+                        "message": "다른 기기에서 pro 기능이 활성화되었습니다. 현재 기기의 pro 기능을 비활성화합니다."
+                    }, status=status.HTTP_200_OK)
+                
+                # 그 외의 경우 (기기 일치 또는 미사용 상태 등)
+                return Response({
+                    "is_mismatch": False,
+                    "message": "정상적으로 활성화된 상태입니다."
+                }, status=status.HTTP_200_OK)
+                
+            except RedeemCode.DoesNotExist:
+                return Response({
+                    "message": "유효하지 않은 리딤코드입니다.",
+                    "is_mismatch": False,
+                    "error_code": 4002
+                }, status=status.HTTP_404_NOT_FOUND)
+                
+        return Response({
+            "message": "유효하지 않은 데이터 형식입니다.",
+            "is_mismatch": False,
             "errors": serializer.errors,
             "error_code": 3003
         }, status=status.HTTP_400_BAD_REQUEST)
