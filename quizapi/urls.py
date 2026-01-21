@@ -21,14 +21,13 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('quiz/', include('quiz.urls')),
-    path('recommendation/', include('movie_recommendation.urls')),
-    path('worldcup/', include('movie_worldcup.urls')),
-    path('counchillor/', include('counchillor.urls')),
-    path('api/', include('upbit_gateway.urls')),
+    path('api/admin/', admin.site.urls),
+    path('api/quiz/', include('quiz.urls')),
+    path('api/recommendation/', include('movie_recommendation.urls')),
+    path('api/worldcup/', include('movie_worldcup.urls')),
+    path('api/counchillor/', include('counchillor.urls')),
     path('api/pdf/', include('pdfredactor.urls')),
     path('api/pdf-redeem/', include('redactor_pro_code_issuance.urls')),
     path('api/', include('guestbook.urls')),
-    path('', include('home.urls')),
+    path('api/', include('home.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_URL) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

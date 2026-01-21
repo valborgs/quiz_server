@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     'movie_recommendation',
     'movie_worldcup',
     'counchillor',
-    'upbit_gateway',
     'rest_framework',
     'pdfredactor',
     'redactor_pro_code_issuance',
@@ -154,10 +153,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
-
-# Upbit API settings
-UPBIT_ACCESS_KEY = env('UPBIT_ACCESS_KEY', default='')
-UPBIT_SECRET_KEY = env('UPBIT_SECRET_KEY', default='')
 
 # Redeem Code API Key
 REDEEM_API_KEY = env('REDEEM_API_KEY', default='')
